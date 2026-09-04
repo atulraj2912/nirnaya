@@ -1,0 +1,16 @@
+// NIRNAYA — Prisma schema
+//
+// Phase 0 scope: toolchain configuration only (datasource + generator).
+// Domain models (Organization, User, Ticket, etc.) are introduced in
+// Phase 2 ("Prisma schema, database connection, seed infrastructure")
+// per docs/PROGRESS.md and the Master Technical Specification.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
