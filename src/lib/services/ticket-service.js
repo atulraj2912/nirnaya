@@ -16,6 +16,12 @@ import {
   recalculateResolutionSLA,
   evaluateAndPersistSLA,
 } from "./sla-service";
+import {
+  notifyTicketAssigned,
+  notifyTicketStatusChanged,
+  notifyTicketReopened,
+  createNotification,
+} from "./notification-service";
 
 /**
  * Generate a ticket number in NIR-YYYY-000001 format.
@@ -120,6 +126,17 @@ export async function createTicket(data, user) {
   initializeTicketSLA(ticket.id, orgId, ticket.priority).catch((err) => {
     console.error("SLA initialization failed:", err);
   });
+
+  // Notify assigned agent if assignment happened during creation
+  if (ticket.assignedAgentId) {
+    notifyTicketAssigned({
+      ticketId: ticket.id,
+      ticketNumber: ticket.ticketNumber,
+      assignedToId: ticket.assignedAgentId,
+      assignedById: user.id,
+      organizationId: orgId,
+    }).catch((err) => console.error("Notification failed:", err));
+  }
 
   return ticket;
 }
@@ -420,6 +437,32 @@ export async function transitionStatus(ticketId, newStatus, user) {
     reopenSLA(ticketId).catch((err) => console.error("SLA reopen failed:", err));
   }
 
+  // Notification hooks (fire-and-forget)
+  const ticketNumber = updated.ticketNumber || ticket.ticketNumber;
+  if (newStatus === "REOPENED") {
+    const requesterId = ticket.requesterId;
+    const recipientId = requesterId;
+    notifyTicketReopened({
+      ticketId,
+      ticketNumber,
+      recipientId,
+      organizationId: ticket.organizationId,
+      actorId: user.id,
+    }).catch((err) => console.error("Notification failed:", err));
+  } else if (updated.assignedAgentId) {
+    const recipientId = updated.assignedAgentId;
+    if (recipientId !== user.id) {
+      notifyTicketStatusChanged({
+        ticketId,
+        ticketNumber,
+        newStatus,
+        recipientId,
+        organizationId: ticket.organizationId,
+        actorId: user.id,
+      }).catch((err) => console.error("Notification failed:", err));
+    }
+  }
+
   return updated;
 }
 
@@ -492,6 +535,15 @@ export async function assignTicket(ticketId, data, user) {
   ]);
 
   updated.allowedTransitions = getAllowedTransitions(updated.status);
+
+  // Notify assigned agent (fire-and-forget)
+  notifyTicketAssigned({
+    ticketId,
+    ticketNumber: updated.ticketNumber || ticket.ticketNumber,
+    assignedToId: parsed.agentId,
+    assignedById: user.id,
+    organizationId: ticket.organizationId,
+  }).catch((err) => console.error("Notification failed:", err));
 
   return updated;
 }

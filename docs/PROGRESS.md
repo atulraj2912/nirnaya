@@ -1,10 +1,107 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 7 — complete and verified
+## Current phase: Phase 8 — complete and verified
 
 ## Completed phases
 
-### Phase 7 — SLA Engine
+### Phase 8 — Notifications and Realtime
+
+**What was implemented:**
+
+- **Socket.IO server integration** (`server.js`):
+  - Custom Node.js HTTP server wrapping Next.js with Socket.IO 4.x
+  - Runs on `/api/socketio` path with WebSocket + polling transports
+  - Supports both `dev` (next dev equivalent) and `production` modes
+  - `npm run dev` now uses `node server.js` for Socket.IO support
+- **Socket.IO server logic** (`src/lib/realtime/socket-server.js`):
+  - JWT authentication middleware — extracts token from `auth.token`, cookie header, or query parameter
+  - Database user verification (ACTIVE status check)
+  - Room-based authorization: `user:{id}`, `org:{orgId}`, `ticket:{ticketId}`
+  - Ticket subscription with org isolation + USER role restriction
+  - Emit helpers: `emitToUser()`, `emitToOrg()`, `emitToTicket()`
+- **Socket.IO client abstraction** (`src/lib/realtime/socket-client.js`):
+  - Singleton connection management with auto-reconnection
+  - Event subscriptions: `onNotification`, `onTicketUpdated`, `onTicketStatusChanged`, `onTicketAssigned`
+  - Ticket subscribe/unsubscribe helpers
+  - Cleanup functions for all listeners
+- **Notification service** (`src/lib/services/notification-service.js`):
+  - `createNotification()` — validates ticket existence, deduplicates by (type, ticketId, recipientId, organizationId)
+  - `createBulkNotifications()` — batch creation with error isolation
+  - `getUserNotifications()` — paginated, org-scoped, unread filter
+  - `getUnreadCount()` — org-scoped unread count
+  - `markAsRead()` — user ownership + org isolation validation
+  - `markAllAsRead()` — bulk mark read for current user
+  - Event-specific helpers: `notifyTicketAssigned()`, `notifyTicketStatusChanged()`, `notifySLABreach()`, `notifySLAWarning()`, `notifyTicketReopened()`
+  - Self-notification prevention (actor ≠ recipient)
+- **Notification API routes**:
+  - `GET /api/notifications` — paginated list with unread filter
+  - `PATCH /api/notifications` — mark single or all as read
+  - `GET /api/notifications/unread-count` — unread notification count
+- **Notification UI components**:
+  - `src/components/notifications/notification-bell.jsx` — header bell with unread badge, dropdown toggle, auto-refresh every 30s
+  - `src/components/notifications/notification-list.jsx` — notification list with type icons, time-ago display, read/unread state, ticket click-through
+  - Updated `src/components/layout/header.jsx` — replaced placeholder bell with NotificationBell component
+- **Ticket service integration**:
+  - `createTicket()` — notifies assigned agent (when applicable)
+  - `transitionStatus()` — notifies on reopen (to requester) and status change (to assigned agent)
+  - `assignTicket()` — notifies newly assigned agent
+  - All notification calls are fire-and-forget (`.catch()`)
+- **SLA breach scan**:
+  - `src/lib/services/sla-scan-service.js` — `runSLABreachScan(organizationId)`:
+    - Queries tickets with active SLA (ON_TRACK/WARNING status, non-CLOSED)
+    - Evaluates response and resolution SLA independently
+    - Detects breach and warning transitions
+    - Creates deduplicated notifications per spec §22
+    - Updates ticket SLA status fields
+    - Returns scan summary (scanned, breached, warned, unchanged, notifications)
+  - `POST /api/admin/sla-scan` — ADMIN-only endpoint for manual scan triggering
+- **React hooks** (`src/hooks/use-realtime.js`):
+  - `useSocketConnection(token)` — manages Socket.IO lifecycle
+  - `useTicketRealtime(ticketId, callbacks)` — subscribes to ticket room with event callbacks
+  - `useNotificationRealtime(callbacks)` — listens for notification events
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `server.js` | Created |
+| `src/lib/realtime/socket-server.js` | Created |
+| `src/lib/realtime/socket-client.js` | Created |
+| `src/lib/services/notification-service.js` | Created |
+| `src/lib/services/sla-scan-service.js` | Created |
+| `src/app/api/notifications/route.js` | Created |
+| `src/app/api/notifications/unread-count/route.js` | Created |
+| `src/app/api/admin/sla-scan/route.js` | Created |
+| `src/components/notifications/notification-bell.jsx` | Created |
+| `src/components/notifications/notification-list.jsx` | Created |
+| `src/hooks/use-realtime.js` | Created |
+| `src/components/layout/header.jsx` | Modified (NotificationBell integration) |
+| `src/lib/services/ticket-service.js` | Modified (notification imports + fire-and-forget calls) |
+| `package.json` | Modified (dev/start scripts use server.js) |
+| `tests/notification-service.test.js` | Created |
+| `tests/sla-scan.test.js` | Created |
+| `tests/socket-server.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, pre-existing) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Prisma client generation | `npx prisma generate` | ✅ generated |
+| Unit tests | `npm run test` (Vitest) | ✅ 370/370 passed |
+| Production build | `npm run build` | ✅ compiled, 33 routes generated |
+| Git diff check | `git diff --check` | ✅ only CRLF warnings |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- No comments system yet (Phase 9) — `notifyCommentAdded()` not yet implemented
+- No watcher management UI yet (Phase 9)
+- No activity timeline UI yet (Phase 9)
+- Socket.IO is optional — `next dev`/`next start` still work without server.js for HTTP-only mode
+- Proactive SLA breach scan requires manual trigger or external scheduler — no continuous background worker (documented limitation per D-000 item 4)
+- Real-time ticket detail updates via Socket.IO are wired but not yet integrated into ticket-detail.jsx React Query cache invalidation (Phase 9 can add this)
+- No admin CRUD UI for departments/categories/tags/users yet (Phase 10)
 
 **What was implemented:**
 
@@ -430,7 +527,7 @@
 
 ## Next phase
 
-**Phase 8** — Notifications and realtime (per spec §22-§24). Awaiting go-ahead.
+**Phase 9** — Comments, watchers and activity timeline (per spec §14-§16). Awaiting go-ahead.
 
 ---
 
