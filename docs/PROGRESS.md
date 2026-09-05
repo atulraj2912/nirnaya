@@ -1,8 +1,125 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 0 — complete and verified
+## Current phase: Phase 1 — complete and verified
 
 ## Completed phases
+
+### Phase 1 — Next.js foundation, dependencies, environment configuration, base UI structure
+
+**What was implemented:**
+
+- Server-side environment validation (`src/lib/env.js`) using Zod 4.x,
+  with fail-fast validation of all required env vars (DATABASE_URL,
+  DIRECT_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET) and optional
+  AI_PROVIDER/AI_PROVIDER_API_KEY. Separates public vs server-only
+  variables; only importable from server-side code.
+- Tailwind CSS 4 theme tokens (`src/app/globals.css`) — primary, success,
+  warning, danger color scales; surface/border/text colors; font families;
+  shadow definitions. Uses Tailwind 4's `@theme` directive.
+- Base UI component library (`src/components/ui/`):
+  - `button.jsx` — primary/secondary/danger/ghost variants, sm/md/lg sizes
+  - `card.jsx` — Card, CardHeader, CardContent, CardFooter
+  - `input.jsx` — label, error state, accessible
+  - `badge.jsx` — color-coded status badges (primary/success/warning/danger/neutral)
+  - `avatar.jsx` — image or initials fallback
+- App shell layout (`src/components/layout/`):
+  - `sidebar.jsx` — full sidebar with nav sections (Overview, Tickets,
+    Administration), active-route highlighting, user placeholder
+  - `header.jsx` — top bar with notification bell placeholder
+  - `app-shell.jsx` — combines sidebar + header + content area
+- Route groups established:
+  - `(auth)/login/page.js` — login form (disabled, placeholder for Phase 3)
+  - `(auth)/layout.js` — centered auth layout without sidebar
+  - `(dashboard)/dashboard/page.js` — dashboard with stat cards
+  - `(dashboard)/tickets/page.js` — ticket list placeholder
+  - `(dashboard)/tickets/new/page.js` — ticket creation placeholder
+  - `(dashboard)/tickets/mine/page.js` — my tickets placeholder
+  - `(dashboard)/admin/users/page.js` — user management placeholder
+  - `(dashboard)/admin/departments/page.js` — department mgmt placeholder
+  - `(dashboard)/admin/categories/page.js` — category mgmt placeholder
+  - `(dashboard)/admin/tags/page.js` — tag mgmt placeholder
+  - `(dashboard)/admin/sla/page.js` — SLA config placeholder
+  - `(dashboard)/admin/settings/page.js` — settings placeholder
+- Root `src/app/page.js` redirects to `/login` via `next/navigation`
+  `redirect()`.
+- Health endpoint updated from `phase-0` to `phase-1`.
+- Updated `vitest.setup.js` with proper DOM cleanup between tests.
+- Updated `vitest.config.mjs` to support `.jsx` test files and `@/*`
+  path alias.
+- Added Phase 1 unit tests:
+  - `tests/health.test.js` — updated to assert `phase: "phase-1"`
+  - `tests/env.test.js` — Zod schema validation tests (valid env,
+    missing fields, short secrets, defaults)
+  - `tests/components.test.jsx` — Button, Card, Badge, Avatar rendering
+    and behavior tests
+- Updated `e2e/smoke.spec.js` — login page, dashboard page, and
+  redirect tests
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/env.js` | Created |
+| `src/components/ui/button.jsx` | Created |
+| `src/components/ui/card.jsx` | Created |
+| `src/components/ui/input.jsx` | Created |
+| `src/components/ui/badge.jsx` | Created |
+| `src/components/ui/avatar.jsx` | Created |
+| `src/components/layout/sidebar.jsx` | Created |
+| `src/components/layout/header.jsx` | Created |
+| `src/components/layout/app-shell.jsx` | Created |
+| `src/app/(auth)/layout.js` | Created |
+| `src/app/(auth)/login/page.js` | Created |
+| `src/app/(dashboard)/dashboard/page.js` | Created |
+| `src/app/(dashboard)/tickets/page.js` | Created |
+| `src/app/(dashboard)/tickets/new/page.js` | Created |
+| `src/app/(dashboard)/tickets/mine/page.js` | Created |
+| `src/app/(dashboard)/admin/users/page.js` | Created |
+| `src/app/(dashboard)/admin/departments/page.js` | Created |
+| `src/app/(dashboard)/admin/categories/page.js` | Created |
+| `src/app/(dashboard)/admin/tags/page.js` | Created |
+| `src/app/(dashboard)/admin/sla/page.js` | Created |
+| `src/app/(dashboard)/admin/settings/page.js` | Created |
+| `src/app/page.js` | Modified (redirect to /login) |
+| `src/app/api/health/route.js` | Modified (phase-1 marker) |
+| `src/app/globals.css` | Modified (theme tokens) |
+| `vitest.config.mjs` | Modified (jsx support, path alias) |
+| `vitest.setup.js` | Modified (DOM cleanup) |
+| `tests/health.test.js` | Modified (phase-1 assertion) |
+| `tests/env.test.js` | Created |
+| `tests/components.test.jsx` | Created |
+| `e2e/smoke.spec.js` | Modified (multi-page tests) |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Unit tests | `npm run test` (Vitest) | ✅ 14/14 passed |
+| Production build | `npm run build` | ✅ compiled, 15 static + dynamic routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- No database connection, no domain models, no seed data (Phase 2).
+- No authentication/authorization code yet (Phase 3). Login form is
+  disabled placeholder only.
+- No ticket/comment/SLA/AI/notification/realtime logic yet (Phases 4–9).
+- No custom `server.js`/Socket.IO wiring yet — deferred to Phase 8.
+- Avatar component uses `<img>` instead of `next/image` (acceptable for
+  Phase 1; will be optimized when image domain config is needed).
+- All dashboard/admin pages show placeholder text — real content comes
+  in Phases 4, 7, 10.
+- Sidebar navigation shows all sections regardless of role — role-based
+  filtering will be added in Phase 3.
+- `npm audit` findings from Phase 0 remain (transitive dev-tool
+  dependency; not remediated — see DECISIONS.md D-000 item 5).
+
+## Next phase
+
+**Phase 2** — Prisma schema, database connection, seed infrastructure
+(per spec §36). Awaiting go-ahead.
+
+---
 
 ### Phase 0 — Repository/environment inspection and project bootstrap
 
@@ -44,48 +161,15 @@ and the unrelated `nirnaya01/emergency` project was not referenced.
   `docs/PROGRESS.md` (this file), `docs/TEST_PLAN.md`,
   `docs/DECISIONS.md` created.
 - Ambiguities raised during planning were resolved and recorded in
-  `docs/DECISIONS.md`: AI provider deferred to Phase 5 behind a
-  pluggable service seam (D-001); assignment-confidence formula
-  implemented exactly as specified, with the 90-vs-20 example's
-  mathematical inconsistency documented rather than silently "fixed"
-  (D-002); Attachment model excluded from V1 (D-003); Invitation model
-  and email-invite flow excluded from V1 (D-004); Vitest/RTL/Playwright
-  chosen as the test stack (D-005); explicit ticket-lifecycle
-  transition table recorded, with `ASSIGNED` mandatory before
-  `IN_PROGRESS` and manual-only resume from `WAITING_FOR_USER` (D-006).
-
-**Files created/modified:** see the file list in the Phase 0 report
-below (chat response) — everything under `prisma/`, `src/`, `tests/`,
-`e2e/`, `docs/`, plus root config/toolchain files.
+  `docs/DECISIONS.md`.
 
 **Tests run:**
 
 | Check | Command | Result |
 |---|---|---|
 | Lint | `npm run lint` | ✅ pass, no issues |
-| Prisma schema syntax | `npx prisma validate` (transient dummy env vars, no real DB) | ✅ valid |
+| Prisma schema syntax | `npx prisma validate` | ✅ valid |
 | Prisma client generation | `npx prisma generate` | ✅ generated |
 | Unit/toolchain smoke test | `npm run test` (Vitest) | ✅ 1/1 passed |
 | Production build | `npm run build` | ✅ compiled, static + `/api/health` routes generated |
-| End-to-end smoke test | `npm run test:e2e` (Playwright, against the production build) | ✅ 1/1 passed |
-
-**Known limitations / not yet done (by design — later phases):**
-
-- No database connection, no domain models, no seed data (Phase 2).
-- No authentication/authorization code yet (Phase 3).
-- No ticket/comment/SLA/AI/notification/realtime logic yet (Phases 4–9).
-- No custom `server.js`/Socket.IO wiring yet — deferred to Phase 8
-  (see `DECISIONS.md`, D-000 item 2).
-- `npm audit` reports 3 high-severity findings, all from the same
-  transitive dev-tool dependency chain (`prisma` → `@prisma/config` →
-  `deepmerge-ts`), not from runtime application code; not remediated
-  because the suggested fix would downgrade Prisma below the required
-  6.x pin (see `DECISIONS.md`, D-000 item 5).
-- AI provider is not yet selected (by design — decision deferred to
-  before Phase 5, per explicit instruction).
-
-## Next phase
-
-**Phase 1** — Next.js foundation, dependencies, environment
-configuration, base UI structure (per spec §36). Awaiting go-ahead —
-Phase 0 stops here per instruction.
+| End-to-end smoke test | `npm run test:e2e` (Playwright) | ✅ 1/1 passed |

@@ -48,6 +48,9 @@ Prisma Client  ──►  Supabase PostgreSQL
   Phase 4 onward) — ticket lifecycle, comments, watchers, activity,
   notifications, assignment, etc. This is where spec rules actually
   live, not in components or route handlers (spec §4).
+- **environment validation** (`src/lib/env.js`, Phase 1) — server-side
+  only; Zod-validated env vars with fail-fast behavior. Must not be
+  imported from client components.
 - **database/Prisma** (`prisma/schema.prisma`, planned
   `src/lib/db/prisma.js` singleton client, Phase 2) — schema and
   connection only; no query logic beyond thin data-access use inside
@@ -65,22 +68,52 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 0):
+Current (Phase 1):
 
 ```
 /prisma
-  schema.prisma          # datasource + generator only (no models yet)
+  schema.prisma               # datasource + generator only (no models yet)
 /src
   /app
-    layout.js
-    page.js               # bootstrap status page, not a product screen
-    globals.css
+    layout.js                  # root HTML layout
+    page.js                    # redirects to /login
+    globals.css                # Tailwind 4 @theme tokens
+    (auth)/
+      layout.js                # centered auth layout (no sidebar)
+      login/page.js            # login form placeholder (Phase 3)
+    (dashboard)/
+      dashboard/page.js        # dashboard with stat cards
+      tickets/page.js          # ticket list placeholder
+      tickets/new/page.js      # ticket creation placeholder
+      tickets/mine/page.js     # my tickets placeholder
+      admin/
+        users/page.js          # user management placeholder
+        departments/page.js    # department mgmt placeholder
+        categories/page.js     # category mgmt placeholder
+        tags/page.js           # tag mgmt placeholder
+        sla/page.js            # SLA config placeholder
+        settings/page.js       # settings placeholder
     /api
-      /health/route.js     # toolchain smoke-test endpoint
+      /health/route.js         # toolchain smoke-test endpoint
+  /components
+    /ui/
+      button.jsx               # primary/secondary/danger/ghost
+      card.jsx                 # Card, CardHeader, CardContent, CardFooter
+      input.jsx                # label, error state, accessible
+      badge.jsx                # color-coded status badges
+      avatar.jsx               # image or initials fallback
+    /layout/
+      sidebar.jsx              # nav sidebar with sections
+      header.jsx               # top bar with notifications
+      app-shell.jsx            # sidebar + header + content
+  /lib
+    env.js                     # server-side env validation (Zod)
 /tests
-  health.test.js            # Vitest
+  health.test.js               # Vitest — health endpoint
+  env.test.js                  # Vitest — env validation schema
+  components.test.jsx          # Vitest — UI components
 /e2e
-  smoke.spec.js               # Playwright
+  smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
   NIRNAYA_MASTER_SPEC.md
   ARCHITECTURE.md
@@ -88,7 +121,7 @@ Current (Phase 0):
   TEST_PLAN.md
   DECISIONS.md
 .env.example
-vitest.config.js / vitest.setup.js
+vitest.config.mjs / vitest.setup.js
 playwright.config.js
 next.config.mjs / jsconfig.json / eslint.config.mjs / postcss.config.mjs
 ```
@@ -98,11 +131,7 @@ Planned growth (later phases), not created yet:
 ```
 /src
   /app
-    (auth)/login/page.js                      [Phase 3]
-    (dashboard)/dashboard/page.js               [Phase 10]
-    (dashboard)/tickets/page.js                 [Phase 4]
     (dashboard)/tickets/[id]/page.js             [Phase 4/9]
-    (dashboard)/admin/{users,departments,...}      [Phase 10]
     /api/auth/{login,logout,refresh,me}/route.js  [Phase 3]
     /api/tickets/route.js                           [Phase 4]
     /api/tickets/[id]/route.js                       [Phase 4]
@@ -114,7 +143,6 @@ Planned growth (later phases), not created yet:
     /api/sla/route.js                                       [Phase 7]
     /api/ai/{classify,assignment-recommendation}/route.js    [Phase 5/6]
     /api/admin/**/route.js                                     [Phase 10]
-  /components/**                                                [as needed]
   /lib
     /auth/{jwt,password,cookies,session}.js                       [Phase 3]
     /authz/{requireAuth,requireRole,...}.js                         [Phase 3]

@@ -7,11 +7,17 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.js"],
-    include: ["tests/**/*.test.js"],
+    include: ["tests/**/*.{test,spec}.{js,jsx}"],
   },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
+    },
+  },
+  oxc: {
+    parser: {
+      jsx: true,
+      lang: "jsx",
     },
   },
 });

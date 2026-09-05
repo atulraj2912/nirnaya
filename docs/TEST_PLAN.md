@@ -52,4 +52,15 @@ recorded up front.
   heading renders — validates the Playwright + production-build
   toolchain end-to-end.
 
+## Phase 1 status
+
+- `tests/health.test.js` (Vitest): updated to assert `phase: "phase-1"`.
+- `tests/env.test.js` (Vitest): validates Zod schema for env vars
+  (valid input, missing fields, short secrets, defaults applied).
+- `tests/components.test.jsx` (Vitest + RTL): renders and tests Button
+  (enabled/disabled), Card (children, header/footer), Badge (variants),
+  Avatar (initials, image, fallback).
+- `e2e/smoke.spec.js` (Playwright): redirects `/` to `/login`, renders
+  login form, renders dashboard with stat cards.
+
 Results of running these are recorded in `PROGRESS.md`.
