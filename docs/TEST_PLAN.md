@@ -299,3 +299,21 @@ Results of running these are recorded in `PROGRESS.md`.
     organization, USER list tickets filters by requesterId.
 
 Results of running these are recorded in `PROGRESS.md`.
+
+## Phase 12 status
+
+- Removed `tests/recommendation-schema.test.js` (16 tests) — tested
+  dead code in `src/lib/ai/recommendation-schema.js` which was never
+  imported by any production file. The recommendation engine computes
+  scores algorithmically without AI provider involvement.
+- All existing tests pass after cleanup: 523/523.
+
+## V1 final status
+
+| Metric | Value |
+|--------|-------|
+| Test files | 34 |
+| Total tests | 523 |
+| All tests passing | Yes |
+
+Results of running these are recorded in `PROGRESS.md`.

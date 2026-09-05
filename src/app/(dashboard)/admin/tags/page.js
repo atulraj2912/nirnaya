@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppShell from "@/components/layout/app-shell";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -46,56 +45,50 @@ export default function AdminTagsPage() {
   }
 
   return (
-    <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text">Tags</h1>
-            <p className="text-sm text-text-secondary">Manage ticket tags for flexible classification.</p>
-          </div>
-          <Button onClick={() => setShowCreate(true)}>Add Tag</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Tags</h1>
+          <p className="text-sm text-text-secondary">Manage ticket tags for flexible classification.</p>
         </div>
-
-        <Card>
-          <CardContent>
-            {loading ? (
-              <p className="text-sm text-text-muted">Loading...</p>
-            ) : tags.length === 0 ? (
-              <p className="text-sm text-text-muted">No tags found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Name</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Used On</th>
-                      <th className="pb-2 font-medium text-text-muted">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tags.map((t) => (
-                      <tr key={t.id} className="border-b border-border last:border-0">
-                        <td className="py-2 pr-4 font-medium text-text">{t.name}</td>
-                        <td className="py-2 pr-4 text-text-secondary">{t._count?.ticketTags || 0} tickets</td>
-                        <td className="py-2">
-                          <Button variant="ghost" size="sm" className="text-danger-600" onClick={() => handleDelete(t.id, t.name)}>
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Button onClick={() => setShowCreate(true)}>Add Tag</Button>
       </div>
 
-      {showCreate && (
-        <TagModal onClose={() => setShowCreate(false)} onSubmit={handleCreate} />
-      )}
-    </AppShell>
+      <Card>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-text-muted">Loading...</p>
+          ) : tags.length === 0 ? (
+            <p className="text-sm text-text-muted">No tags found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Name</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Used On</th>
+                    <th className="pb-2 font-medium text-text-muted">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tags.map((t) => (
+                    <tr key={t.id} className="border-b border-border last:border-0">
+                      <td className="py-2 pr-4 font-medium text-text">{t.name}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{t._count?.ticketTags || 0} tickets</td>
+                      <td className="py-2">
+                        <Button variant="ghost" size="sm" className="text-danger-600" onClick={() => handleDelete(t.id, t.name)}>
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

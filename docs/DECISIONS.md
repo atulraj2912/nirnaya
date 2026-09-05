@@ -7,6 +7,53 @@ Newest entries at the top.
 
 ---
 
+## D-016 — Final V1 cleanup, double AppShell fix, dead code removal (Phase 12)
+
+**Context:** Phase 12 is the final V1 development phase focused on
+production-build readiness, documentation, and release preparation.
+The audit revealed a critical double AppShell wrapping bug, dead code,
+debug logging in production, and missing input validation.
+
+**Decision:**
+
+1. **Double AppShell wrapping removed.** The `(dashboard)/layout.js`
+   server component already wraps all children in `<AppShell user={user}>`.
+   All 11 dashboard child pages were also wrapping their content in
+   `<AppShell>` (without the user prop), causing nested sidebars and
+   headers. Fixed by removing `<AppShell>` from all child pages.
+
+2. **Dead code removed.** `src/lib/ai/recommendation-schema.js` (82 lines)
+   was never imported by any file in src/ or tests/. Its corresponding
+   test file `tests/recommendation-schema.test.js` was also removed.
+   The recommendation engine (`agent-recommendation-service.js`) computes
+   scores algorithmically without AI provider involvement, making these
+   Zod schemas unused.
+
+3. **Socket client debug logging gated.** `console.log` statements in
+   `socket-client.js` for connect/disconnect events are now gated behind
+   `process.env.NODE_ENV === "development"` to prevent debug output in
+   production builds.
+
+4. **ACCESS_TOKEN_NAME DRY fix.** `socket-server.js` now imports
+   `ACCESS_TOKEN_NAME` from `@/lib/auth/cookies.js` instead of defining
+   its own duplicate constant. If the cookie name changes, only one
+   file needs updating.
+
+5. **Org settings validation added.** The `PATCH /api/admin/settings`
+   route now validates input using `updateOrgSettingsSchema` from
+   `@/lib/validation/admin.js`, which was already defined but unused.
+   This prevents mass assignment of unvalidated fields.
+
+**Rationale:**
+- Double AppShell was the most severe UI bug — users would see nested
+  sidebars and headers on every page.
+- Dead code removal reduces bundle size and maintenance burden.
+- Debug logging in production can leak operational information.
+- DRY violations create maintenance risk if constants diverge.
+- Missing validation on settings updates is a security concern.
+
+---
+
 ## D-015 — Security hardening, validation, regression, and UX polish (Phase 11)
 
 **Context:** Phase 11 implements "Security hardening, validation, regression testing

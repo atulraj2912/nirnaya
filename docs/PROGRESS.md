@@ -1,6 +1,43 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 11 — complete and verified
+## NIRNAYA V1 DEVELOPMENT: COMPLETE
+
+All 12 phases are complete. The project is production-build ready,
+release-package ready, and demo ready.
+
+### Final V1 Results
+
+| Check | Result |
+|---|---|
+| Lint | ✅ 0 errors, 1 pre-existing warning (avatar `<img>`) |
+| Prisma validation | ✅ valid |
+| Tests | ✅ 523/523 passed (34 test files) |
+| Production build | ✅ compiled, 46 routes |
+
+### Final Architecture
+
+- Single Next.js 16.3.4 application (App Router, JavaScript only)
+- React 19, Tailwind CSS 4, Prisma 6.19.3, Supabase PostgreSQL
+- Socket.IO 4.8.3 for real-time notifications
+- JWT authentication via HTTP-only cookies (jose 6.2.11)
+- Role-based access control (USER, AGENT, ADMIN)
+- Organization-scoped data isolation
+- Zod 4.5.4 validation on all inputs
+
+### V1 Capabilities
+
+- Authentication & authorization (JWT, RBAC, org isolation)
+- Ticket CRUD with lifecycle state machine
+- AI classification (pluggable provider abstraction, mock provider)
+- Agent recommendation (algorithmic scoring engine)
+- SLA engine (priority-based elapsed-time tracking)
+- Real-time notifications (Socket.IO)
+- Comments (public/internal) with visibility rules
+- Watchers with real-time updates
+- Activity timeline
+- Admin dashboard and management (users, departments, categories, tags, SLA configs, org settings)
+- UX polish (error/loading/empty states, socket status indicator)
+- Security hardening (auth standardization, pagination bounds, input validation)
 
 ## Completed phases
 
@@ -86,6 +123,60 @@
 | Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
 | Prisma schema validation | `npx prisma validate` | ✅ valid |
 | Unit tests | `npx vitest run` | ✅ 539/539 passed |
+| Production build | `npx next build` | ✅ compiled, 46 routes generated |
+
+---
+
+### Phase 12 — Final V1 Production Build, Documentation & Release Readiness
+
+**What was implemented:**
+
+- **Double AppShell bug fix**: Removed redundant `<AppShell>` wrapping from all 11 dashboard pages. The `(dashboard)/layout.js` already wraps children in `<AppShell user={user}>`, but every child page also wrapped in `<AppShell>` (without user prop), causing nested sidebars/headers. Fixed by removing `<AppShell>` from: tickets/page.js, tickets/new/page.js, tickets/[id]/page.js, tickets/mine/page.js, dashboard/page.js, admin/users/page.js, admin/departments/page.js, admin/categories/page.js, admin/tags/page.js, admin/sla/page.js, admin/settings/page.js.
+
+- **Dead code removal**:
+  - Deleted `src/lib/ai/recommendation-schema.js` (82 lines, never imported by any file)
+  - Deleted `tests/recommendation-schema.test.js` (16 tests for dead code)
+
+- **Socket client debug logging**: Gated `console.log` statements in `src/lib/realtime/socket-client.js` behind `NODE_ENV === "development"` to prevent debug output in production.
+
+- **DRY fix — ACCESS_TOKEN_NAME**: `socket-server.js` now imports `ACCESS_TOKEN_NAME` from `@/lib/auth/cookies.js` instead of defining its own duplicate constant.
+
+- **Input validation for org settings**: Added Zod validation (`updateOrgSettingsSchema`) to the `PATCH /api/admin/settings` route handler.
+
+- **README.md rewrite**: Complete rewrite with V1 documentation including architecture, stack, setup instructions, demo accounts, security notes, and limitations.
+
+- **PROGRESS.md updated**: Final V1 status, completion summary, and Phase 12 entry.
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/app/(dashboard)/tickets/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/tickets/new/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/tickets/[id]/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/tickets/mine/page.js` | Modified (removed AppShell, added showMyTicketsOnly prop) |
+| `src/app/(dashboard)/dashboard/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/users/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/departments/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/categories/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/tags/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/sla/page.js` | Modified (removed AppShell) |
+| `src/app/(dashboard)/admin/settings/page.js` | Modified (removed AppShell) |
+| `src/lib/realtime/socket-client.js` | Modified (gated console.log) |
+| `src/lib/realtime/socket-server.js` | Modified (import ACCESS_TOKEN_NAME) |
+| `src/app/api/admin/settings/route.js` | Modified (added Zod validation) |
+| `src/lib/ai/recommendation-schema.js` | Deleted (dead code) |
+| `tests/recommendation-schema.test.js` | Deleted (dead code test) |
+| `README.md` | Rewritten for V1 |
+| `docs/PROGRESS.md` | Updated with V1 status |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npx vitest run` | ✅ 523/523 passed |
 | Production build | `npx next build` | ✅ compiled, 46 routes generated |
 
 ---

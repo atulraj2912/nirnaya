@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppShell from "@/components/layout/app-shell";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -56,70 +55,61 @@ export default function AdminSlaPage() {
   const existingPriorities = configs.map((c) => c.priority);
 
   return (
-    <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text">SLA Configuration</h1>
-            <p className="text-sm text-text-secondary">
-              Configure priority-based SLA response and resolution targets (elapsed time only).
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)}>Add SLA Config</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text">SLA Configuration</h1>
+          <p className="text-sm text-text-secondary">
+            Configure priority-based SLA response and resolution targets (elapsed time only).
+          </p>
         </div>
-
-        <Card>
-          <CardContent>
-            {loading ? (
-              <p className="text-sm text-text-muted">Loading...</p>
-            ) : configs.length === 0 ? (
-              <p className="text-sm text-text-muted">No SLA configurations found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Priority</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Response Time</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Resolution Time</th>
-                      <th className="pb-2 font-medium text-text-muted">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {configs.map((c) => (
-                      <tr key={c.id} className="border-b border-border last:border-0">
-                        <td className="py-2 pr-4">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            c.priority === "CRITICAL" ? "bg-danger-50 text-danger-700" :
-                            c.priority === "HIGH" ? "bg-warning-50 text-warning-700" :
-                            c.priority === "MEDIUM" ? "bg-primary-50 text-primary-700" :
-                            "bg-surface-secondary text-text-secondary"
-                          }`}>
-                            {c.priority}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-4 text-text-secondary">{c.responseTimeMinutes} min</td>
-                        <td className="py-2 pr-4 text-text-secondary">{c.resolutionTimeMinutes} min</td>
-                        <td className="py-2">
-                          <Button variant="ghost" size="sm" onClick={() => setEditConfig(c)}>Edit</Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Button onClick={() => setShowCreate(true)}>Add SLA Config</Button>
       </div>
 
-      {showCreate && (
-        <SLAConfigModal title="Add SLA Config" onClose={() => setShowCreate(false)} onSubmit={handleCreate} excludePriorities={existingPriorities} />
-      )}
-      {editConfig && (
-        <SLAConfigModal title="Edit SLA Config" initialData={editConfig} onClose={() => setEditConfig(null)} onSubmit={handleUpdate} excludePriorities={[]} />
-      )}
-    </AppShell>
+      <Card>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-text-muted">Loading...</p>
+          ) : configs.length === 0 ? (
+            <p className="text-sm text-text-muted">No SLA configurations found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Priority</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Response Time</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Resolution Time</th>
+                    <th className="pb-2 font-medium text-text-muted">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {configs.map((c) => (
+                    <tr key={c.id} className="border-b border-border last:border-0">
+                      <td className="py-2 pr-4">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          c.priority === "CRITICAL" ? "bg-danger-50 text-danger-700" :
+                          c.priority === "HIGH" ? "bg-warning-50 text-warning-700" :
+                          c.priority === "MEDIUM" ? "bg-primary-50 text-primary-700" :
+                          "bg-surface-secondary text-text-secondary"
+                        }`}>
+                          {c.priority}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-text-secondary">{c.responseTimeMinutes} min</td>
+                      <td className="py-2 pr-4 text-text-secondary">{c.resolutionTimeMinutes} min</td>
+                      <td className="py-2">
+                        <Button variant="ghost" size="sm" onClick={() => setEditConfig(c)}>Edit</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
 import prisma from "@/lib/db/prisma";
+import { updateOrgSettingsSchema } from "@/lib/validation/admin";
 
 export async function GET(request) {
   const { user, response } = await requireAdmin(request);
@@ -38,13 +39,14 @@ export async function PATCH(request) {
 
   try {
     const body = await request.json();
+    const parsed = updateOrgSettingsSchema.parse(body);
 
     const allowed = {};
-    if (body.name !== undefined) allowed.name = body.name;
-    if (body.description !== undefined) allowed.description = body.description;
-    if (body.businessHoursStart !== undefined) allowed.businessHoursStart = body.businessHoursStart;
-    if (body.businessHoursEnd !== undefined) allowed.businessHoursEnd = body.businessHoursEnd;
-    if (body.timezone !== undefined) allowed.timezone = body.timezone;
+    if (parsed.name !== undefined) allowed.name = parsed.name;
+    if (parsed.description !== undefined) allowed.description = parsed.description;
+    if (parsed.businessHoursStart !== undefined) allowed.businessHoursStart = parsed.businessHoursStart;
+    if (parsed.businessHoursEnd !== undefined) allowed.businessHoursEnd = parsed.businessHoursEnd;
+    if (parsed.timezone !== undefined) allowed.timezone = parsed.timezone;
 
     const org = await prisma.organization.update({
       where: { id: user.organizationId },
@@ -62,6 +64,9 @@ export async function PATCH(request) {
 
     return NextResponse.json({ organization: org });
   } catch (err) {
+    if (err.name === "ZodError") {
+      return NextResponse.json({ error: "Validation failed", details: err.issues }, { status: 400 });
+    }
     console.error("Update org settings error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

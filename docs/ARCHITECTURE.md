@@ -66,7 +66,7 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 10):
+Final V1:
 
 ```
 /prisma

@@ -30,11 +30,15 @@ export function connectSocket(token) {
   });
 
   socket.on("connect", () => {
-    console.log("[Socket] Connected");
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Socket] Connected");
+    }
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("[Socket] Disconnected:", reason);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Socket] Disconnected:", reason);
+    }
   });
 
   socket.on("connect_error", (err) => {

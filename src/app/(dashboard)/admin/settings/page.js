@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppShell from "@/components/layout/app-shell";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -59,48 +58,44 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="space-y-6">
-          <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
-          <p className="text-sm text-text-muted">Loading...</p>
-        </div>
-      </AppShell>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
+        <p className="text-sm text-text-muted">Loading...</p>
+      </div>
     );
   }
 
   return (
-    <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
-          <p className="text-sm text-text-secondary">
-            Configure your organization&apos;s general settings.
-          </p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <h2 className="text-base font-semibold text-text">General</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSave} className="space-y-4 max-w-2xl">
-              <Input label="Organization Name" value={org?.name || ""} onChange={set("name")} required />
-              <Input label="Description" value={org?.description || ""} onChange={set("description")} />
-              <Input label="Slug" value={org?.slug || ""} disabled />
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Business Hours Start" type="time" value={org?.businessHoursStart || ""} onChange={set("businessHoursStart")} />
-                <Input label="Business Hours End" type="time" value={org?.businessHoursEnd || ""} onChange={set("businessHoursEnd")} />
-              </div>
-              <Input label="Timezone" value={org?.timezone || ""} onChange={set("timezone")} />
-              {error && <p className="text-sm text-danger-600">{error}</p>}
-              {success && <p className="text-sm text-success-600">Settings saved successfully.</p>}
-              <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
+        <p className="text-sm text-text-secondary">
+          Configure your organization&apos;s general settings.
+        </p>
       </div>
-    </AppShell>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-base font-semibold text-text">General</h2>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSave} className="space-y-4 max-w-2xl">
+            <Input label="Organization Name" value={org?.name || ""} onChange={set("name")} required />
+            <Input label="Description" value={org?.description || ""} onChange={set("description")} />
+            <Input label="Slug" value={org?.slug || ""} disabled />
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Business Hours Start" type="time" value={org?.businessHoursStart || ""} onChange={set("businessHoursStart")} />
+              <Input label="Business Hours End" type="time" value={org?.businessHoursEnd || ""} onChange={set("businessHoursEnd")} />
+            </div>
+            <Input label="Timezone" value={org?.timezone || ""} onChange={set("timezone")} />
+            {error && <p className="text-sm text-danger-600">{error}</p>}
+            {success && <p className="text-sm text-success-600">Settings saved successfully.</p>}
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

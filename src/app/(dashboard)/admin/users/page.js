@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppShell from "@/components/layout/app-shell";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -91,122 +90,113 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <AppShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text">User Management</h1>
-            <p className="text-sm text-text-secondary">
-              Manage organization users, roles, and access.
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)}>Add User</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text">User Management</h1>
+          <p className="text-sm text-text-secondary">
+            Manage organization users, roles, and access.
+          </p>
         </div>
-
-        <Card>
-          <CardContent>
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <Input
-                  placeholder="Search users..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                />
-              </div>
-              <Select
-                value={roleFilter}
-                onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-              >
-                {ROLE_OPTIONS.map((r) => (
-                  <option key={r} value={r}>{r || "All Roles"}</option>
-                ))}
-              </Select>
-              <Select
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s || "All Statuses"}</option>
-                ))}
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            {loading ? (
-              <p className="text-sm text-text-muted">Loading...</p>
-            ) : users.length === 0 ? (
-              <p className="text-sm text-text-muted">No users found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Username</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Email</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Role</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Status</th>
-                      <th className="pb-2 pr-4 font-medium text-text-muted">Department</th>
-                      <th className="pb-2 font-medium text-text-muted">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="border-b border-border last:border-0">
-                        <td className="py-2 pr-4 font-medium text-text">{u.username}</td>
-                        <td className="py-2 pr-4 text-text-secondary">{u.email}</td>
-                        <td className="py-2 pr-4">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            u.role === "ADMIN" ? "bg-danger-50 text-danger-700" :
-                            u.role === "AGENT" ? "bg-warning-50 text-warning-700" :
-                            "bg-surface-secondary text-text-secondary"
-                          }`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-4"><StatusBadge status={u.status} /></td>
-                        <td className="py-2 pr-4 text-text-secondary">{u.department?.name || "—"}</td>
-                        <td className="py-2">
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setEditUser(u)}>
-                              Edit
-                            </Button>
-                            {u.status === "ACTIVE" && (
-                              <Button variant="ghost" size="sm" className="text-danger-600" onClick={() => handleDeactivate(u.id)}>
-                                Deactivate
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {total > 15 && (
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-xs text-text-muted">{total} users total</p>
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
-                  <span className="flex items-center px-3 text-sm text-text-muted">Page {page}</span>
-                  <Button variant="secondary" size="sm" disabled={users.length < 15} onClick={() => setPage(page + 1)}>Next</Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Button onClick={() => setShowCreate(true)}>Add User</Button>
       </div>
 
-      {showCreate && (
-        <UserModal title="Add User" onClose={() => setShowCreate(false)} onSubmit={handleCreate} departments={departments} />
-      )}
-      {editUser && (
-        <UserModal title="Edit User" initialData={editUser} onClose={() => setEditUser(null)} onSubmit={handleUpdate} departments={departments} />
-      )}
-    </AppShell>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              />
+            </div>
+            <Select
+              value={roleFilter}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            >
+              {ROLE_OPTIONS.map((r) => (
+                <option key={r} value={r}>{r || "All Roles"}</option>
+              ))}
+            </Select>
+            <Select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s || "All Statuses"}</option>
+              ))}
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-text-muted">Loading...</p>
+          ) : users.length === 0 ? (
+            <p className="text-sm text-text-muted">No users found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Username</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Email</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Role</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Status</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Department</th>
+                    <th className="pb-2 font-medium text-text-muted">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} className="border-b border-border last:border-0">
+                      <td className="py-2 pr-4 font-medium text-text">{u.username}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{u.email}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          u.role === "ADMIN" ? "bg-danger-50 text-danger-700" :
+                          u.role === "AGENT" ? "bg-warning-50 text-warning-700" :
+                          "bg-surface-secondary text-text-secondary"
+                        }`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4"><StatusBadge status={u.status} /></td>
+                      <td className="py-2 pr-4 text-text-secondary">{u.department?.name || "\u2014"}</td>
+                      <td className="py-2">
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setEditUser(u)}>
+                            Edit
+                          </Button>
+                          {u.status === "ACTIVE" && (
+                            <Button variant="ghost" size="sm" className="text-danger-600" onClick={() => handleDeactivate(u.id)}>
+                              Deactivate
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {total > 15 && (
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-xs text-text-muted">{total} users total</p>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
+                <span className="flex items-center px-3 text-sm text-text-muted">Page {page}</span>
+                <Button variant="secondary" size="sm" disabled={users.length < 15} onClick={() => setPage(page + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
