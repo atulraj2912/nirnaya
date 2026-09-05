@@ -1,12 +1,12 @@
 import Sidebar from "./sidebar";
 import Header from "./header";
 
-export default function AppShell({ children }) {
+export default function AppShell({ children, user }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar user={user} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        <Header user={user} />
         <main className="flex-1 overflow-y-auto bg-surface-secondary p-6">
           {children}
         </main>

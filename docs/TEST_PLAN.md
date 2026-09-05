@@ -65,6 +65,30 @@ recorded up front.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 3 status
+
+- `tests/password.test.js` (Vitest): bcrypt hash/verify correctness,
+  salt randomness, incorrect password rejection, empty string handling.
+- `tests/jwt.test.js` (Vitest): access/refresh token signing and
+  verification, decoded payload contains userId/role/organizationId,
+  invalid token returns null, wrong secret returns null, access token
+  cannot be verified as refresh token.
+- `tests/auth.test.js` (Vitest): getCurrentUser returns null when no
+  token, invalid token, user INACTIVE, or user not found; returns user
+  when valid and ACTIVE. Cookie helpers: set/clear/read access and
+  refresh tokens.
+- `tests/authz.test.js` (Vitest): requireAuth returns 401 on missing/
+  invalid token, returns user on valid. requireRole returns 403 when
+  role not allowed, returns user when allowed. requireAdmin rejects
+  USER and AGENT, accepts ADMIN. requireAgentOrAdmin rejects USER,
+  accepts AGENT and ADMIN. requireSameOrganization returns ok on match,
+  403 on mismatch.
+- `tests/org-isolation.test.js` (Vitest): cross-org access denied for
+  users, tickets, departments; same-org access allowed; JWT
+  organizationId scoping verified.
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 2 status
 
 - `tests/schema.test.js` (Vitest): validates Prisma schema structure

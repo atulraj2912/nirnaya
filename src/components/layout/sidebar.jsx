@@ -90,8 +90,15 @@ function NavIcon({ icon }) {
   return icons[icon] || null;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ user }) {
   const pathname = usePathname();
+
+  function getInitials(u) {
+    if (!u) return "U";
+    const first = u.username?.charAt(0) || "";
+    const last = u.username?.split(".").pop()?.charAt(0) || "";
+    return (first + last).toUpperCase();
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-surface">
@@ -135,11 +142,15 @@ export default function Sidebar() {
       <div className="border-t border-border px-3 py-3">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-800">
-            U
+            {getInitials(user)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-text">Demo User</p>
-            <p className="truncate text-xs text-text-muted">Phase 1 placeholder</p>
+            <p className="truncate text-sm font-medium text-text">
+              {user?.username || "User"}
+            </p>
+            <p className="truncate text-xs text-text-muted">
+              {user?.designation || user?.role || "Member"}
+            </p>
           </div>
         </div>
       </div>

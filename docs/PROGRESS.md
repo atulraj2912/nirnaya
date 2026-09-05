@@ -1,8 +1,120 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 2 — complete and verified
+## Current phase: Phase 3 — complete and verified
 
 ## Completed phases
+
+### Phase 3 — Authentication and authorization
+
+**What was implemented:**
+
+- Password hashing library (`src/lib/auth/password.js`) using bcrypt
+  with 12 salt rounds: `hashPassword()` and `verifyPassword()`
+- JWT token library (`src/lib/auth/jwt.js`) using jose 6.x with
+  `crypto.subtle.importKey` for HMAC-SHA256:
+  - `signAccessToken()` — 1 hour expiry
+  - `signRefreshToken()` — 7 day expiry
+  - `verifyAccessToken()` / `verifyRefreshToken()` — returns null
+    on invalid/expired tokens
+  - JWT payload contains: `userId`, `role`, `organizationId`
+- HTTP-only cookie helpers (`src/lib/auth/cookies.js`):
+  - `setAccessTokenCookie()` / `setRefreshTokenCookie()` — Secure,
+    SameSite=Lax, HttpOnly, path=/
+  - `clearAuthCookies()` — for logout
+  - `getAccessTokenFromRequest()` / `getRefreshTokenFromRequest()`
+- Session helper (`src/lib/auth/session.js`):
+  - `getCurrentUser()` — verifies JWT, fetches user from DB, confirms
+    ACTIVE status, returns user without passwordHash
+- Authorization helpers (`src/lib/authz/index.js`):
+  - `requireAuth()` — returns 401 if not authenticated
+  - `requireRole(request, roles[])` — returns 403 if role not allowed
+  - `requireAdmin()` — shorthand for ADMIN role
+  - `requireAgentOrAdmin()` — shorthand for AGENT or ADMIN roles
+  - `requireSameOrganization(user, resourceOrgId)` — returns 403 on
+    cross-org access attempt
+- API routes:
+  - `POST /api/auth/login` — validates email/password, verifies
+    bcrypt, returns user + sets access/refresh cookies
+  - `POST /api/auth/logout` — clears both auth cookies
+  - `GET /api/auth/me` — returns current authenticated user
+- Login page (`src/app/(auth)/login/page.js`) — functional client
+  component with email/password form, loading states, error display,
+  redirect to `/dashboard` on success
+- Dashboard layout (`src/app/(dashboard)/layout.js`) — server component
+  that checks authentication via `getCurrentUser()`, redirects to
+  `/login` if not authenticated, passes user to AppShell
+- App shell (`src/components/layout/app-shell.jsx`) — accepts user
+  prop, passes to Sidebar and Header
+- Sidebar (`src/components/layout/sidebar.jsx`) — displays real user
+  initials, username, and designation from session
+- Header (`src/components/layout/header.jsx`) — displays user avatar
+  (initials), username, role badge, and Sign Out button with logout
+  functionality
+- Phase 3 unit tests:
+  - `tests/password.test.js` — bcrypt hash/verify, salt randomness,
+    incorrect password rejection
+  - `tests/jwt.test.js` — token signing/verification, wrong secret
+    rejection, access/refresh token separation
+  - `tests/auth.test.js` — getCurrentUser with valid/invalid/inactive
+    users, cookie helpers
+  - `tests/authz.test.js` — requireAuth (401 on missing/invalid token,
+    user returned on valid), requireRole (403 on wrong role), requireAdmin,
+    requireAgentOrAdmin, requireSameOrganization
+  - `tests/org-isolation.test.js` — cross-org access denied for
+    users, tickets, departments; same-org access allowed; JWT
+    organizationId scoping verified
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/auth/password.js` | Created |
+| `src/lib/auth/jwt.js` | Created |
+| `src/lib/auth/cookies.js` | Created |
+| `src/lib/auth/session.js` | Created |
+| `src/lib/auth/index.js` | Created |
+| `src/lib/authz/index.js` | Created |
+| `src/app/api/auth/login/route.js` | Created |
+| `src/app/api/auth/logout/route.js` | Created |
+| `src/app/api/auth/me/route.js` | Created |
+| `src/app/(auth)/login/page.js` | Modified (functional login form) |
+| `src/app/(dashboard)/layout.js` | Created (auth check) |
+| `src/components/layout/app-shell.jsx` | Modified (accepts user prop) |
+| `src/components/layout/header.jsx` | Modified (real user, logout) |
+| `src/components/layout/sidebar.jsx` | Modified (real user display) |
+| `tests/password.test.js` | Created |
+| `tests/jwt.test.js` | Created |
+| `tests/auth.test.js` | Created |
+| `tests/authz.test.js` | Created |
+| `tests/org-isolation.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 140/140 passed |
+| Production build | `npm run build` | ✅ compiled, 18 routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- Database migration not yet applied (requires network access to
+  Supabase; run `npx prisma db push` or create a migration when
+  connected).
+- Seed script not yet executed (requires live database; run
+  `npx prisma db seed` after migration).
+- No ticket/comment/SLA/AI/notification/realtime logic yet (Phases 4–9).
+- No custom `server.js`/Socket.IO wiring yet — deferred to Phase 8.
+- `npm audit` findings from Phase 0 remain (transitive dev-tool
+  dependency; not remediated — see DECISIONS.md D-000 item 5).
+
+## Next phase
+
+**Phase 4** — Core ticket system and lifecycle (per spec §36). Awaiting
+go-ahead.
+
+---
 
 ### Phase 2 — Prisma schema, database connection, seed infrastructure
 

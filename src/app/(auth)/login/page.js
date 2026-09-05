@@ -1,12 +1,46 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 
-export const metadata = {
-  title: "Sign In — NIRNAYA",
-};
-
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -23,15 +57,31 @@ export default function LoginPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <form className="flex flex-col gap-4">
-          <Input label="Email" type="email" placeholder="you@company.com" disabled />
-          <Input label="Password" type="password" placeholder="Enter your password" disabled />
-          <Button disabled className="w-full">
-            Sign In
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+              {error}
+            </div>
+          )}
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Signing in..." : "Sign In"}
           </Button>
-          <p className="text-center text-xs text-text-muted">
-            Authentication will be implemented in Phase 3.
-          </p>
         </form>
       </CardContent>
     </Card>

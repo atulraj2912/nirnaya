@@ -68,7 +68,7 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 2):
+Current (Phase 3):
 
 ```
 /prisma
@@ -81,8 +81,9 @@ Current (Phase 2):
     globals.css                # Tailwind 4 @theme tokens
     (auth)/
       layout.js                # centered auth layout (no sidebar)
-      login/page.js            # login form placeholder (Phase 3)
+      login/page.js            # functional login form (Phase 3)
     (dashboard)/
+      layout.js                # auth-gated layout (redirects to /login)
       dashboard/page.js        # dashboard with stat cards
       tickets/page.js          # ticket list placeholder
       tickets/new/page.js      # ticket creation placeholder
@@ -96,6 +97,9 @@ Current (Phase 2):
         settings/page.js       # settings placeholder
     /api
       /health/route.js         # toolchain smoke-test endpoint
+      /auth/login/route.js     # POST login (bcrypt + JWT + cookies)
+      /auth/logout/route.js    # POST logout (clear cookies)
+      /auth/me/route.js        # GET current user
   /components
     /ui/
       button.jsx               # primary/secondary/danger/ghost
@@ -104,12 +108,21 @@ Current (Phase 2):
       badge.jsx                # color-coded status badges
       avatar.jsx               # image or initials fallback
     /layout/
-      sidebar.jsx              # nav sidebar with sections
-      header.jsx               # top bar with notifications
+      sidebar.jsx              # nav sidebar with real user display
+      header.jsx               # top bar with user info + logout
       app-shell.jsx            # sidebar + header + content
   /lib
     env.js                     # server-side env validation (Zod)
-    /db
+    /auth/
+      password.js              # bcrypt hash/verify (12 rounds)
+      jwt.js                   # jose sign/verify (HS256, CryptoKey)
+      cookies.js               # HTTP-only Secure SameSite cookies
+      session.js               # getCurrentUser() from request cookies
+      index.js                 # re-exports
+    /authz/
+      index.js                 # requireAuth, requireRole, requireAdmin,
+                               # requireAgentOrAdmin, requireSameOrganization
+    /db/
       prisma.js                # Prisma client singleton
 /tests
   health.test.js               # Vitest — health endpoint
@@ -118,6 +131,11 @@ Current (Phase 2):
   schema.test.js               # Vitest — Prisma schema structure
   prisma-client.test.js        # Vitest — Prisma client singleton
   seed.test.js                 # Vitest — seed script structure
+  password.test.js             # Vitest — bcrypt hash/verify
+  jwt.test.js                  # Vitest — JWT sign/verify
+  auth.test.js                 # Vitest — session + cookie helpers
+  authz.test.js                # Vitest — authorization helpers
+  org-isolation.test.js        # Vitest — cross-org denial
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -138,7 +156,6 @@ Planned growth (later phases), not created yet:
 /src
   /app
     (dashboard)/tickets/[id]/page.js             [Phase 4/9]
-    /api/auth/{login,logout,refresh,me}/route.js  [Phase 3]
     /api/tickets/route.js                           [Phase 4]
     /api/tickets/[id]/route.js                       [Phase 4]
     /api/tickets/[id]/comments/route.js               [Phase 9]
@@ -150,8 +167,6 @@ Planned growth (later phases), not created yet:
     /api/ai/{classify,assignment-recommendation}/route.js    [Phase 5/6]
     /api/admin/**/route.js                                     [Phase 10]
   /lib
-    /auth/{jwt,password,cookies,session}.js                       [Phase 3]
-    /authz/{requireAuth,requireRole,...}.js                         [Phase 3]
     /validation/*.js                                                  [Phase 4+]
     /services/*.js                                                     [Phase 4+]
     /realtime/{socket-server,emit,rooms}.js                              [Phase 8]

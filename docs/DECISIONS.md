@@ -7,6 +7,38 @@ Newest entries at the top.
 
 ---
 
+## D-008 — jose 6.x key format and test environment (Phase 3)
+
+**Context:** jose 6.x enforces strict key type checking via
+`instanceof Uint8Array`. In jsdom (used by Vitest), the global
+`Uint8Array` polyfill differs from Node.js's native `Uint8Array`,
+causing `Buffer` instances (which extend `Uint8Array`) to be rejected
+with "Key for the HS256 algorithm must be one of type CryptoKey,
+KeyObject, JSON Web Key, or Uint8Array."
+
+**Decision:**
+
+1. **Use `crypto.subtle.importKey` for JWT signing/verification.**
+   Instead of passing raw `Uint8Array` or `Buffer` to `jose.sign()`,
+   import the secret as a proper `CryptoKey` via Web Crypto API:
+   ```js
+   crypto.subtle.importKey("raw", encoder.encode(secret),
+     { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"])
+   ```
+   This produces a native `CryptoKey` that jose accepts regardless of
+   the test environment's global scope quirks.
+
+2. **No jose mock needed in tests.** Because `CryptoKey` is a native
+   Node.js object (not polyfilled by jsdom), the real jose library
+   works correctly in both production and test environments.
+
+3. **Environment variable mocking.** Tests mock `@/lib/env` to provide
+   `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` values, since the real
+   env.js validates against `process.env` which lacks these in the
+   test environment.
+
+---
+
 ## D-007 — Prisma schema and seed approach (Phase 2)
 
 **Context:** Spec §28 says "The original project used Prisma db push
