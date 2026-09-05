@@ -50,8 +50,11 @@ async function upsertOrganization() {
 
 /**
  * Upsert departments — idempotent by (organizationId, name).
+ * Uses raw SQL for initial creation to avoid Prisma input type ambiguity
+ * when createdById is nullable. The main() function updates createdBy
+ * after users exist.
  */
-async function upsertDepartments(orgId, adminUserId) {
+async function upsertDepartments(orgId) {
   const departments = [
     { name: "IT Support", code: "ITS" },
     { name: "Network Operations", code: "NET" },
@@ -69,16 +72,15 @@ async function upsertDepartments(orgId, adminUserId) {
     if (existing) {
       results.push(existing);
     } else {
-      results.push(
-        await prisma.department.create({
-          data: {
-            ...dept,
-            organizationId: orgId,
-            createdById: adminUserId,
-            updatedById: adminUserId,
-          },
-        })
-      );
+      await prisma.$executeRaw`
+        INSERT INTO departments (id, name, code, "organizationId", "isActive", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), ${dept.name}, ${dept.code}, ${orgId}, true, NOW(), NOW())
+        ON CONFLICT ("organizationId", "name") DO NOTHING
+      `;
+      const created = await prisma.department.findFirst({
+        where: { organizationId: orgId, name: dept.name },
+      });
+      results.push(created);
     }
   }
   return results;
@@ -634,15 +636,15 @@ async function main() {
   const org = await upsertOrganization();
   console.log(`  ✓ Organization: ${org.name} (${org.id})`);
 
-  // 2. Departments
-  const departments = await upsertDepartments(org.id, org.id);
+  // 2. Departments (created with null createdById — no users exist yet)
+  const departments = await upsertDepartments(org.id);
   console.log(`  ✓ Departments: ${departments.length} created/found`);
 
-  // 3. Users (need admin user first for createdBy references)
+  // 3. Users (need departments to exist for departmentId references)
   const users = await upsertUsers(org.id, departments);
   console.log(`  ✓ Users: ${users.length} created/found`);
 
-  // Update departments with admin as createdBy if they don't have it
+  // 4. Update departments with admin as createdBy/updatedBy
   const admin = users.find((u) => u.username === "admin");
   for (const dept of departments) {
     if (dept.createdById !== admin.id) {

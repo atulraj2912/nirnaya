@@ -121,7 +121,7 @@ model Department {
   code           String
   managerId      String?
   organizationId String
-  createdById    String
+  createdById    String?
   updatedById    String?
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
@@ -130,7 +130,7 @@ model Department {
   // Relations
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   manager        User?        @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
-  createdBy      User         @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy      User?        @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy      User?        @relation("DepartmentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   users          User[]
   tickets        Ticket[]

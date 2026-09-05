@@ -1,0 +1,3 @@
+-- Baseline migration: represents the existing database schema state
+-- This migration is marked as already applied during initial setup
+-- No SQL changes needed — the schema already exists in the database

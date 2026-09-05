@@ -1,6 +1,7 @@
 import { verifyAccessToken } from "@/lib/auth/jwt.js";
-import { ACCESS_TOKEN_NAME } from "@/lib/auth/cookies.js";
 import prisma from "@/lib/db/prisma.js";
+
+const ACCESS_TOKEN_NAME = "nirnaya_access_token";
 
 function extractToken(socket) {
   const auth = socket.handshake.auth;
