@@ -46,9 +46,11 @@ function timeAgo(date) {
 export default function NotificationList({
   notifications,
   loading,
+  error,
   onMarkRead,
   onMarkAllRead,
   onClose,
+  onRetry,
 }) {
   const router = useRouter();
 
@@ -80,6 +82,18 @@ export default function NotificationList({
         {loading ? (
           <div className="flex justify-center py-8 text-sm text-text-muted">
             Loading...
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-8 text-text-muted">
+            <p className="text-sm text-danger-600">{error}</p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="mt-2 text-xs text-primary-600 hover:text-primary-700"
+              >
+                Retry
+              </button>
+            )}
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-text-muted">

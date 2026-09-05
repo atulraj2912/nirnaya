@@ -7,7 +7,60 @@ Newest entries at the top.
 
 ---
 
-## D-014 — Administration and organization management architecture (Phase 10)
+## D-015 — Security hardening, validation, regression, and UX polish (Phase 11)
+
+**Context:** Phase 11 implements "Security hardening, validation, regression testing
+and UX polish" per spec §36. The spec does not define exact patterns for auth
+standardization, UI error state strategy, pagination bounds, or regression test
+scope.
+
+**Decision:**
+
+1. **Auth pattern standardization.** All API routes now use a single consistent
+   pattern: `const { user, response } = await requireAuth(request); if (response) return response;`
+   for authenticated endpoints, and `requireAdmin(request)` for admin-only routes.
+   Both return `{ user, response }` — never `{ error }`. This eliminates the
+   mixed patterns found during audit (some routes used destructured `error`, some
+   used `user` directly).
+
+2. **Pagination bounds.** All list endpoints enforce `Math.min(100, Math.max(1, ...))`
+   on the `limit` query parameter. This prevents unbounded queries (1-100 range).
+   Applied to: tickets, users, departments, categories, tags, comments, activity,
+   and notifications endpoints.
+
+3. **UI error state strategy.** Components use conditional rendering: show error
+   state with retry button when `error` state is set, show empty state with icon
+   when data array is empty, show loading skeleton during fetch. The `notification-list.jsx`
+   accepts an `error` prop; `notification-bell.jsx` and `ticket-detail.jsx` use
+   local error state with retry handlers.
+
+4. **Socket connection status.** `useSocketStatus()` hook exposed from
+   `use-realtime.js` returns `{ connected, reconnecting }` derived from Socket.IO
+   client events. Header shows colored status dot: green (Connected), gray (Offline),
+   amber (Reconnecting...).
+
+5. **Regression test scope.** Security edge-case tests focus on:
+   - Cross-organization data isolation (4 tests)
+   - USER role restrictions at service layer (2 tests)
+   - Role-based access control for AGENT and ADMIN (4 tests)
+   - Ticket lifecycle protection (2 tests)
+   - Authentication and authorization helpers (4 tests)
+   - Data isolation in queries (2 tests)
+   Total: 16 tests covering the security surface area without duplicating
+   existing unit tests.
+
+6. **`react-hooks/set-state-in-effect` lint compliance.** Admin pages (Phase 10)
+   were refactored from `useCallback` + `useEffect` pattern to inline `useEffect`
+   with `cancelled` flag and `refreshKey` counter for manual refresh. This
+   eliminates the lint error of calling setState synchronously within an effect
+   while preserving the same UX behavior.
+
+**Rationale:**
+- Standardized auth pattern reduces cognitive load and prevents subtle bugs
+  from inconsistent error handling across 30+ routes.
+- Pagination bounds are a basic DoS prevention measure.
+- UI error states improve user experience without requiring additional state management.
+- Security tests provide regression coverage for the most critical attack vectors.
 
 **Context:** Phase 10 requires admin dashboard, analytics, and administrative
 UI per spec §32. The spec defines organizational management, user administration,

@@ -13,6 +13,7 @@ export default function TicketList() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     status: searchParams.get("status") || "",
     priority: searchParams.get("priority") || "",
@@ -23,6 +24,7 @@ export default function TicketList() {
   useEffect(() => {
     async function fetchTickets() {
       setLoading(true);
+      setError("");
       const params = new URLSearchParams();
       if (filters.status) params.set("status", filters.status);
       if (filters.priority) params.set("priority", filters.priority);
@@ -30,12 +32,18 @@ export default function TicketList() {
       params.set("page", String(filters.page));
       params.set("limit", "20");
 
-      const res = await fetch(`/api/tickets?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
+      try {
+        const res = await fetch(`/api/tickets?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTickets(data.tickets);
+          setTotal(data.total);
+          setTotalPages(data.totalPages);
+        } else {
+          setError("Failed to load tickets. Please try again.");
+        }
+      } catch {
+        setError("Network error. Please check your connection.");
       }
       setLoading(false);
     }
@@ -85,6 +93,16 @@ export default function TicketList() {
 
       {loading ? (
         <div className="flex justify-center py-12 text-text-muted">Loading tickets...</div>
+      ) : error ? (
+        <div className="rounded-xl border border-danger-200 bg-danger-50 p-6 text-center">
+          <p className="text-sm text-danger-700">{error}</p>
+          <button
+            onClick={() => setFilters((prev) => ({ ...prev }))}
+            className="mt-3 text-sm font-medium text-danger-600 hover:text-danger-800"
+          >
+            Retry
+          </button>
+        </div>
       ) : tickets.length === 0 ? (
         <div className="flex justify-center py-12 text-text-muted">No tickets found</div>
       ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import AppShell from "@/components/layout/app-shell";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
@@ -22,38 +22,41 @@ export default function AdminUsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [departments, setDepartments] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page, limit: 15 });
-    if (search) params.set("search", search);
-    if (roleFilter) params.set("role", roleFilter);
-    if (statusFilter) params.set("status", statusFilter);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const params = new URLSearchParams({ page, limit: 15 });
+      if (search) params.set("search", search);
+      if (roleFilter) params.set("role", roleFilter);
+      if (statusFilter) params.set("status", statusFilter);
 
-    const res = await fetch(`/api/admin/users?${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data.users);
-      setTotal(data.total);
+      const res = await fetch(`/api/admin/users?${params}`);
+      if (res.ok && !cancelled) {
+        const data = await res.json();
+        setUsers(data.users);
+        setTotal(data.total);
+      }
+      if (!cancelled) setLoading(false);
     }
-    setLoading(false);
-  }, [page, search, roleFilter, statusFilter]);
+    load();
+    return () => { cancelled = true; };
+  }, [page, search, roleFilter, statusFilter, refreshKey]);
 
-  const fetchDepts = useCallback(async () => {
-    const res = await fetch("/api/admin/departments?limit=100");
-    if (res.ok) {
-      const data = await res.json();
-      setDepartments(data.departments);
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/admin/departments?limit=100");
+      if (res.ok) {
+        const data = await res.json();
+        setDepartments(data.departments);
+      }
     }
+    load();
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  useEffect(() => {
-    fetchDepts();
-  }, [fetchDepts]);
+  function refresh() { setRefreshKey((k) => k + 1); }
 
   async function handleCreate(data) {
     const res = await fetch("/api/admin/users", {
@@ -63,7 +66,7 @@ export default function AdminUsersPage() {
     });
     if (res.ok) {
       setShowCreate(false);
-      fetchUsers();
+      refresh();
     }
     return res.ok;
   }
@@ -76,7 +79,7 @@ export default function AdminUsersPage() {
     });
     if (res.ok) {
       setEditUser(null);
-      fetchUsers();
+      refresh();
     }
     return res.ok;
   }
@@ -84,7 +87,7 @@ export default function AdminUsersPage() {
   async function handleDeactivate(userId) {
     if (!confirm("Are you sure you want to deactivate this user?")) return;
     const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
-    if (res.ok) fetchUsers();
+    if (res.ok) refresh();
   }
 
   return (

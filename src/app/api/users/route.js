@@ -2,21 +2,17 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requireAgentOrAdmin } from "@/lib/authz";
 
-export async function GET() {
+export async function GET(request) {
+  const { user, response: authResponse } = await requireAuth(request);
+  if (authResponse) return authResponse;
+
+  const { response: roleResponse } = await requireAgentOrAdmin(request);
+  if (roleResponse) return roleResponse;
+
   try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
-
-    const { user: agentUser, error: agentError } = await requireAgentOrAdmin();
-    if (agentError) {
-      return NextResponse.json({ error: agentError }, { status: 403 });
-    }
-
     const agents = await prisma.user.findMany({
       where: {
-        organizationId: agentUser.organizationId,
+        organizationId: user.organizationId,
         status: "ACTIVE",
         role: { in: ["AGENT", "ADMIN"] },
       },

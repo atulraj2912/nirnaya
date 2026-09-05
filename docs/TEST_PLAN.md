@@ -274,3 +274,28 @@ Results of running these are recorded in `PROGRESS.md`.
   categories, tags, SLA configs).
 
 Results of running these are recorded in `PROGRESS.md`.
+
+## Phase 11 status
+
+- `tests/security-edge-cases.test.js` (Vitest): 16 tests covering
+  security surface area:
+  - Cross-organization data isolation (4 tests): user cannot access
+    other org's ticket, agent cannot update other org's ticket, admin
+    cannot assign other org's ticket, admin cannot deactivate other
+    org's user.
+  - USER role restrictions at service layer (2 tests): USER cannot
+    assign tickets (service validates target agent role), USER list
+    tickets filters by requesterId.
+  - Role-based access control (4 tests): AGENT can update tickets in
+    their org, ADMIN can update tickets in their org, ADMIN cannot
+    deactivate last admin, ADMIN can deactivate other admins.
+  - Ticket lifecycle protection (2 tests): cannot transition from
+    CLOSED status, cannot skip lifecycle states.
+  - Authentication and authorization (4 tests): requireAuth returns
+    response for missing token, requireAuth returns user for valid
+    token, requireAdmin returns 403 for non-admin, requireAdmin
+    allows ADMIN role.
+  - Data isolation in queries (2 tests): list tickets filters by
+    organization, USER list tickets filters by requesterId.
+
+Results of running these are recorded in `PROGRESS.md`.

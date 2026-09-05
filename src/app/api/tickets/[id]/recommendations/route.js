@@ -12,12 +12,10 @@ import { getRecommendations } from "@/lib/services/agent-recommendation-service"
  * Organization-scoped. Deterministic scoring from database data.
  */
 export async function GET(request, { params }) {
-  try {
-    const { user, response: authError } = await requireAgentOrAdmin(request);
-    if (authError) {
-      return authError;
-    }
+  const { user, response } = await requireAgentOrAdmin(request);
+  if (response) return response;
 
+  try {
     const { id } = await params;
     const result = await getRecommendations(id, user);
 

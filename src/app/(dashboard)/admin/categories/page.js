@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import AppShell from "@/components/layout/app-shell";
-import Card, { CardContent } from "@/components/ui/card";
+import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 
@@ -11,18 +11,24 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editCat, setEditCat] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchCategories = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/categories");
-    if (res.ok) {
-      const data = await res.json();
-      setCategories(data.categories);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await fetch("/api/admin/categories");
+      if (res.ok && !cancelled) {
+        const data = await res.json();
+        setCategories(data.categories);
+      }
+      if (!cancelled) setLoading(false);
     }
-    setLoading(false);
-  }, []);
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  function refresh() { setRefreshKey((k) => k + 1); }
 
   async function handleCreate(data) {
     const res = await fetch("/api/admin/categories", {
@@ -30,7 +36,7 @@ export default function AdminCategoriesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setShowCreate(false); fetchCategories(); }
+    if (res.ok) { setShowCreate(false); refresh(); }
     return res.ok;
   }
 
@@ -40,7 +46,7 @@ export default function AdminCategoriesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setEditCat(null); fetchCategories(); }
+    if (res.ok) { setEditCat(null); refresh(); }
     return res.ok;
   }
 
@@ -50,7 +56,7 @@ export default function AdminCategoriesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !cat.isActive }),
     });
-    if (res.ok) fetchCategories();
+    if (res.ok) refresh();
   }
 
   return (

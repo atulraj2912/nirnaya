@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import AppShell from "@/components/layout/app-shell";
-import Card, { CardContent } from "@/components/ui/card";
+import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 
@@ -10,18 +10,24 @@ export default function AdminTagsPage() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchTags = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/tags");
-    if (res.ok) {
-      const data = await res.json();
-      setTags(data.tags);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await fetch("/api/admin/tags");
+      if (res.ok && !cancelled) {
+        const data = await res.json();
+        setTags(data.tags);
+      }
+      if (!cancelled) setLoading(false);
     }
-    setLoading(false);
-  }, []);
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-  useEffect(() => { fetchTags(); }, [fetchTags]);
+  function refresh() { setRefreshKey((k) => k + 1); }
 
   async function handleCreate(name) {
     const res = await fetch("/api/admin/tags", {
@@ -29,14 +35,14 @@ export default function AdminTagsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-    if (res.ok) { setShowCreate(false); fetchTags(); }
+    if (res.ok) { setShowCreate(false); refresh(); }
     return res.ok;
   }
 
   async function handleDelete(tagId, tagName) {
     if (!confirm(`Delete tag "${tagName}"? This cannot be undone.`)) return;
     const res = await fetch(`/api/admin/tags/${tagId}`, { method: "DELETE" });
-    if (res.ok) fetchTags();
+    if (res.ok) refresh();
   }
 
   return (

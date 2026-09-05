@@ -8,18 +8,18 @@ import {
 } from "@/lib/services/notification-service";
 
 export async function GET(request) {
-  try {
-    const { user, error } = await requireAuth(request);
-    if (error) return error;
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
     const unreadOnly = searchParams.get("unreadOnly") === "true";
 
     const result = await getUserNotifications(user.id, user.organizationId, {
       page,
-      limit: Math.min(limit, 100),
+      limit,
       unreadOnly,
     });
 
@@ -34,10 +34,10 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  try {
-    const { user, error } = await requireAuth(request);
-    if (error) return error;
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const body = await request.json();
 
     if (body.action === "markAllRead") {

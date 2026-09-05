@@ -11,12 +11,10 @@ import { classifyTicket } from "@/lib/services/ai-classification-service";
  * Returns the new prediction on success.
  */
 export async function POST(request, { params }) {
-  try {
-    const { user, response: authError } = await requireAgentOrAdmin(request);
-    if (authError) {
-      return authError;
-    }
+  const { user, response } = await requireAgentOrAdmin(request);
+  if (response) return response;
 
+  try {
     const { id } = await params;
     const { prediction, error: classifyError } = await classifyTicket(id, user);
 

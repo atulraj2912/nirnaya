@@ -3,10 +3,10 @@ import { requireAuth } from "@/lib/authz";
 import { getUnreadCount } from "@/lib/services/notification-service";
 
 export async function GET(request) {
-  try {
-    const { user, error } = await requireAuth(request);
-    if (error) return error;
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const result = await getUnreadCount(user.id, user.organizationId);
     return NextResponse.json(result);
   } catch (error) {

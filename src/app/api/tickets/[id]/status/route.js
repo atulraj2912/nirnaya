@@ -3,12 +3,10 @@ import { requireAuth } from "@/lib/authz";
 import { transitionStatus, TicketError } from "@/lib/services/ticket-service";
 
 export async function POST(request, { params }) {
-  try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const { id } = await params;
     const body = await request.json();
     const ticket = await transitionStatus(id, body.status, user);

@@ -3,16 +3,16 @@ import { requireAuth } from "@/lib/authz";
 import { listTicketActivity, ActivityError } from "@/lib/services/activity-service";
 
 export async function GET(request, { params }) {
-  try {
-    const authResult = await requireAuth(request);
-    if (authResult.response) return authResult.response;
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
 
-    const result = await listTicketActivity(id, authResult.user, { page, limit });
+    const result = await listTicketActivity(id, user, { page, limit });
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ActivityError) {

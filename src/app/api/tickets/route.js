@@ -4,14 +4,16 @@ import { createTicket, listTickets, TicketError } from "@/lib/services/ticket-se
 import { classifyTicket } from "@/lib/services/ai-classification-service";
 
 export async function GET(request) {
-  try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
+
+    // Enforce pagination bounds
+    query.page = Math.max(1, parseInt(query.page || "1", 10));
+    query.limit = Math.min(100, Math.max(1, parseInt(query.limit || "20", 10)));
 
     const result = await listTickets(query, user);
 
@@ -36,12 +38,10 @@ export async function GET(request) {
  * provider when configured."
  */
 export async function POST(request) {
-  try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const body = await request.json();
     const ticket = await createTicket(body, user);
 

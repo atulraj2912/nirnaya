@@ -44,12 +44,16 @@ export default function TicketDetail({ ticketId }) {
 
   useEffect(() => {
     async function fetchTicket() {
-      const res = await fetch(`/api/tickets/${ticketId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTicket(data.ticket);
-      } else {
-        setError("Ticket not found");
+      try {
+        const res = await fetch(`/api/tickets/${ticketId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTicket(data.ticket);
+        } else {
+          setError("Ticket not found");
+        }
+      } catch {
+        setError("Network error. Please check your connection.");
       }
       setLoading(false);
     }
@@ -125,7 +129,25 @@ export default function TicketDetail({ ticketId }) {
   }
 
   if (!ticket) {
-    return <div className="flex justify-center py-12 text-text-muted">{error || "Ticket not found"}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+        <p className="text-sm">{error || "Ticket not found"}</p>
+        <button
+          onClick={() => {
+            setError("");
+            setLoading(true);
+            fetch(`/api/tickets/${ticketId}`).then((res) => {
+              if (res.ok) res.json().then((d) => setTicket(d.ticket));
+              else setError("Ticket not found");
+              setLoading(false);
+            }).catch(() => { setError("Network error"); setLoading(false); });
+          }}
+          className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const transitions = ALLOWED_TRANSITIONS[ticket.status] || [];

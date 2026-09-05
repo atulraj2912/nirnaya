@@ -418,3 +418,44 @@ API: `GET /api/tickets/[id]/activity` — paginated, org/role-scoped
 4. SLA: fire-and-forget `satisfyResponseSLA()` for qualifying comments.
 5. Notifications: fire-and-forget notify requester + watchers.
 6. Return created comment with author details.
+
+---
+
+## Phase 11 — Security hardening, validation, regression & UX polish
+
+### Auth pattern standardization
+
+All API routes now use a single consistent authentication pattern:
+
+```js
+const { user, response } = await requireAuth(request);
+if (response) return response;
+```
+
+For admin-only routes:
+
+```js
+const { user, response } = await requireAdmin(request);
+if (response) return response;
+```
+
+Both `requireAuth` and `requireAdmin` return `{ user, response }` — never `{ error }`. This was standardized across 15+ routes during Phase 11 to eliminate inconsistent error handling patterns.
+
+### Pagination bounds
+
+All list endpoints enforce `Math.min(100, Math.max(1, parseInt(limit)))` on the `limit` query parameter. Applied to: tickets, users, departments, categories, tags, comments, activity, and notifications endpoints.
+
+### UI error states
+
+Components follow a consistent pattern:
+- Show error state with retry button when `error` state is set
+- Show empty state with icon when data array is empty
+- Show loading skeleton during fetch
+
+### Socket connection status
+
+`useSocketStatus()` hook in `src/hooks/use-realtime.js` returns `{ connected, reconnecting }` derived from Socket.IO client events. The header displays a colored status dot: green (Connected), gray (Offline), amber (Reconnecting...).
+
+### Admin page lint compliance
+
+Admin pages were refactored from `useCallback` + `useEffect` to inline `useEffect` with a `refreshKey` counter pattern for manual refresh. This eliminates `react-hooks/set-state-in-effect` lint errors.

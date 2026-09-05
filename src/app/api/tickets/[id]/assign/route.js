@@ -3,20 +3,16 @@ import { requireAuth, requireAgentOrAdmin } from "@/lib/authz";
 import { assignTicket, TicketError } from "@/lib/services/ticket-service";
 
 export async function POST(request, { params }) {
+  const { user, response: authResponse } = await requireAuth(request);
+  if (authResponse) return authResponse;
+
+  const { response: roleResponse } = await requireAgentOrAdmin(request);
+  if (roleResponse) return roleResponse;
+
   try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
-
-    const { user: agentUser, error: agentError } = await requireAgentOrAdmin();
-    if (agentError) {
-      return NextResponse.json({ error: agentError }, { status: 403 });
-    }
-
     const { id } = await params;
     const body = await request.json();
-    const ticket = await assignTicket(id, body, agentUser);
+    const ticket = await assignTicket(id, body, user);
 
     return NextResponse.json({ ticket });
   } catch (error) {

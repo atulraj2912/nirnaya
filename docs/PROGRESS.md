@@ -1,10 +1,94 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 10 — complete and verified
+## Current phase: Phase 11 — complete and verified
 
 ## Completed phases
 
-### Phase 10 — Administration, Organization Management & Platform Completion
+### Phase 11 — Security Hardening, Validation, Regression Testing & UX Polish
+
+**What was implemented:**
+
+- **Auth pattern standardization** across all API routes:
+  - All endpoints now use consistent `{ user, response } = await requireAuth(request)` pattern
+  - Fixed 15+ routes with inconsistent auth patterns (mixed destructuring of `error` vs `user`)
+  - `requireAdmin(request)` returns `{ user }` or `{ response }` — NOT `{ error }`
+  - Applied to: all ticket routes, notification routes, user/category/tag/department routes, all admin routes
+
+- **Pagination bounds** enforced on all list endpoints:
+  - `Math.min(100, Math.max(1, parseInt(limit)))` applied to: tickets, users, departments, categories, tags, comments, activity, notifications
+  - Prevents unbounded queries (1-100 range)
+
+- **UI error states and UX polish:**
+  - `ticket-list.jsx`: Error state with retry button
+  - `ticket-detail.jsx`: Network error handling with retry button
+  - `notification-bell.jsx`: Error state display
+  - `notification-list.jsx`: Error prop, retry button, empty state with icon
+
+- **Socket connection status indicator:**
+  - `useSocketStatus()` hook in `use-realtime.js` returns `{ connected, reconnecting }`
+  - Header shows colored status dot: green (Connected), gray (Offline), amber (Reconnecting...)
+
+- **Admin page lint compliance:**
+  - Refactored 5 admin pages from `useCallback` + `useEffect` to inline `useEffect` with `refreshKey` counter
+  - Eliminates `react-hooks/set-state-in-effect` lint errors while preserving UX behavior
+  - Applied to: users, departments, categories, tags, SLA config pages
+
+- **Security edge-case tests** (16 tests):
+  - Cross-organization data isolation (4 tests)
+  - USER role restrictions at service layer (2 tests)
+  - Role-based access control for AGENT and ADMIN (4 tests)
+  - Ticket lifecycle protection (2 tests)
+  - Authentication and authorization helpers (4 tests)
+  - Data isolation in queries (2 tests)
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `tests/security-edge-cases.test.js` | Created (16 tests) |
+| `src/hooks/use-realtime.js` | Modified (added `useSocketStatus()`) |
+| `src/components/layout/header.jsx` | Modified (socket status indicator) |
+| `src/components/tickets/ticket-list.jsx` | Modified (error state + retry) |
+| `src/components/tickets/ticket-detail.jsx` | Modified (network error handling + retry) |
+| `src/components/notifications/notification-bell.jsx` | Modified (error state) |
+| `src/components/notifications/notification-list.jsx` | Modified (error prop, retry, empty state) |
+| `src/app/api/tickets/route.js` | Modified (auth standardization + pagination bounds) |
+| `src/app/api/tickets/[id]/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/status/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/assign/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/ai/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/sla/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/classify/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/recommendations/route.js` | Modified (auth standardization) |
+| `src/app/api/tickets/[id]/comments/route.js` | Modified (auth standardization + pagination bounds) |
+| `src/app/api/tickets/[id]/activity/route.js` | Modified (auth standardization + pagination bounds) |
+| `src/app/api/notifications/route.js` | Modified (auth standardization + pagination bounds) |
+| `src/app/api/notifications/unread-count/route.js` | Modified (auth standardization) |
+| `src/app/api/users/route.js` | Modified (auth standardization + request param) |
+| `src/app/api/categories/route.js` | Modified (auth standardization + request param) |
+| `src/app/api/tags/route.js` | Modified (auth standardization + request param) |
+| `src/app/api/departments/route.js` | Modified (auth standardization + request param) |
+| `src/app/api/admin/users/route.js` | Modified (pagination bounds) |
+| `src/app/api/admin/departments/route.js` | Modified (pagination bounds) |
+| `src/app/api/admin/categories/route.js` | Modified (pagination bounds) |
+| `src/app/api/admin/tags/route.js` | Modified (pagination bounds) |
+| `src/app/(dashboard)/admin/users/page.js` | Modified (lint fix) |
+| `src/app/(dashboard)/admin/departments/page.js` | Modified (lint fix) |
+| `src/app/(dashboard)/admin/categories/page.js` | Modified (lint fix) |
+| `src/app/(dashboard)/admin/tags/page.js` | Modified (lint fix) |
+| `src/app/(dashboard)/admin/sla/page.js` | Modified (lint fix) |
+| `docs/DECISIONS.md` | Modified (added D-015) |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npx vitest run` | ✅ 539/539 passed |
+| Production build | `npx next build` | ✅ compiled, 46 routes generated |
+
+---
 
 **What was implemented:**
 

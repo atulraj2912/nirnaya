@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   connectSocket,
   disconnectSocket,
@@ -24,6 +24,39 @@ export function useSocketConnection(token) {
       disconnectSocket();
     };
   }, [token]);
+}
+
+export function useSocketStatus() {
+  const [status, setStatus] = useState("disconnected");
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    function updateStatus() {
+      setStatus(socket.connected ? "connected" : "disconnected");
+    }
+
+    updateStatus();
+
+    socket.on("connect", updateStatus);
+    socket.on("disconnect", updateStatus);
+    socket.on("reconnect", updateStatus);
+    socket.on("reconnect_attempt", () => setStatus("reconnecting"));
+    socket.on("reconnect_error", () => setStatus("disconnected"));
+    socket.on("reconnect_failed", () => setStatus("disconnected"));
+
+    return () => {
+      socket.off("connect", updateStatus);
+      socket.off("disconnect", updateStatus);
+      socket.off("reconnect", updateStatus);
+      socket.off("reconnect_attempt");
+      socket.off("reconnect_error");
+      socket.off("reconnect_failed");
+    };
+  }, []);
+
+  return status;
 }
 
 export function useTicketRealtime(ticketId, callbacks = {}) {

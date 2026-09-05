@@ -8,6 +8,7 @@ export default function NotificationBell({ user }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -33,14 +34,17 @@ export default function NotificationBell({ user }) {
 
   async function fetchNotifications() {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/notifications?limit=10");
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications);
+      } else {
+        setError("Failed to load notifications");
       }
     } catch {
-      // Silently fail
+      setError("Network error");
     } finally {
       setLoading(false);
     }
@@ -121,9 +125,11 @@ export default function NotificationBell({ user }) {
           <NotificationList
             notifications={notifications}
             loading={loading}
+            error={error}
             onMarkRead={handleMarkRead}
             onMarkAllRead={handleMarkAllRead}
             onClose={() => setIsOpen(false)}
+            onRetry={fetchNotifications}
           />
         </div>
       )}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import AppShell from "@/components/layout/app-shell";
-import Card, { CardContent } from "@/components/ui/card";
+import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
@@ -14,18 +14,24 @@ export default function AdminSlaPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editConfig, setEditConfig] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchConfigs = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/sla-configs");
-    if (res.ok) {
-      const data = await res.json();
-      setConfigs(data.configs);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await fetch("/api/admin/sla-configs");
+      if (res.ok && !cancelled) {
+        const data = await res.json();
+        setConfigs(data.configs);
+      }
+      if (!cancelled) setLoading(false);
     }
-    setLoading(false);
-  }, []);
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-  useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
+  function refresh() { setRefreshKey((k) => k + 1); }
 
   async function handleCreate(data) {
     const res = await fetch("/api/admin/sla-configs", {
@@ -33,7 +39,7 @@ export default function AdminSlaPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setShowCreate(false); fetchConfigs(); }
+    if (res.ok) { setShowCreate(false); refresh(); }
     return res;
   }
 
@@ -43,7 +49,7 @@ export default function AdminSlaPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setEditConfig(null); fetchConfigs(); }
+    if (res.ok) { setEditConfig(null); refresh(); }
     return res;
   }
 

@@ -9,12 +9,10 @@ import { getPredictions } from "@/lib/services/ai-classification-service";
  * Organization-scoped. Any authenticated user with ticket access can view.
  */
 export async function GET(request, { params }) {
-  try {
-    const { user, error } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status: 401 });
-    }
+  const { user, response } = await requireAuth(request);
+  if (response) return response;
 
+  try {
     const { id } = await params;
     const predictions = await getPredictions(id, user);
 

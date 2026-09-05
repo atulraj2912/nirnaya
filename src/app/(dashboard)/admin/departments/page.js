@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import AppShell from "@/components/layout/app-shell";
-import Card, { CardContent } from "@/components/ui/card";
+import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 
@@ -12,27 +12,35 @@ export default function AdminDepartmentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editDept, setEditDept] = useState(null);
   const [users, setUsers] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchDepts = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/departments");
-    if (res.ok) {
-      const data = await res.json();
-      setDepartments(data.departments);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await fetch("/api/admin/departments");
+      if (res.ok && !cancelled) {
+        const data = await res.json();
+        setDepartments(data.departments);
+      }
+      if (!cancelled) setLoading(false);
     }
-    setLoading(false);
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/admin/users?limit=100&role=ADMIN");
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users);
+      }
+    }
+    load();
   }, []);
 
-  const fetchUsers = useCallback(async () => {
-    const res = await fetch("/api/admin/users?limit=100&role=ADMIN");
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data.users);
-    }
-  }, []);
-
-  useEffect(() => { fetchDepts(); }, [fetchDepts]);
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  function refresh() { setRefreshKey((k) => k + 1); }
 
   async function handleCreate(data) {
     const res = await fetch("/api/admin/departments", {
@@ -40,7 +48,7 @@ export default function AdminDepartmentsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setShowCreate(false); fetchDepts(); }
+    if (res.ok) { setShowCreate(false); refresh(); }
     return res.ok;
   }
 
@@ -50,7 +58,7 @@ export default function AdminDepartmentsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) { setEditDept(null); fetchDepts(); }
+    if (res.ok) { setEditDept(null); refresh(); }
     return res.ok;
   }
 
@@ -90,7 +98,7 @@ export default function AdminDepartmentsPage() {
                       <tr key={d.id} className="border-b border-border last:border-0">
                         <td className="py-2 pr-4 font-medium text-text">{d.name}</td>
                         <td className="py-2 pr-4 font-mono text-xs text-text-secondary">{d.code}</td>
-                        <td className="py-2 pr-4 text-text-secondary">{d.manager?.username || "—"}</td>
+                        <td className="py-2 pr-4 text-text-secondary">{d.manager?.username || "\u2014"}</td>
                         <td className="py-2 pr-4 text-text-secondary">{d._count?.users || 0}</td>
                         <td className="py-2 pr-4 text-text-secondary">{d._count?.tickets || 0}</td>
                         <td className="py-2 pr-4">

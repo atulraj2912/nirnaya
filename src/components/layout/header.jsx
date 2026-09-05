@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/notification-bell";
+import { useSocketStatus } from "@/hooks/use-realtime";
 
 function getInitials(user) {
   if (!user) return "U";
@@ -23,9 +24,22 @@ function getRoleBadgeClass(role) {
   }
 }
 
+const statusColors = {
+  connected: "bg-success-500",
+  disconnected: "bg-danger-500",
+  reconnecting: "bg-warning-500",
+};
+
+const statusLabels = {
+  connected: "Connected",
+  disconnected: "Offline",
+  reconnecting: "Reconnecting...",
+};
+
 export default function Header({ user }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const socketStatus = useSocketStatus();
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -49,6 +63,11 @@ export default function Header({ user }) {
       </div>
 
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5" title={statusLabels[socketStatus]}>
+          <span className={`h-2 w-2 rounded-full ${statusColors[socketStatus]}`} />
+          <span className="text-xs text-text-muted hidden sm:inline">{statusLabels[socketStatus]}</span>
+        </div>
+
         <NotificationBell user={user} />
 
         <div className="flex items-center gap-3">
