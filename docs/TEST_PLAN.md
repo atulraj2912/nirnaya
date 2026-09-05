@@ -156,6 +156,25 @@ Results of running these are recorded in `PROGRESS.md`.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 7 status
+
+- `tests/sla-service.test.js` (Vitest): 43 tests covering
+  `computeSLAInfo` (active ticket, met response, met resolution, null
+  remaining when met, paused info, no config), `initializeTicketSLA`
+  (sets deadlines, returns empty on no config, calculates from createdAt),
+  `pauseSLA` (sets waitingSince, preserves COMPLETED status, null on
+  not found), `resumeSLA` (clears waitingSince, null on not found),
+  `completeResolutionSLA` (sets resolvedAt, null on not found),
+  `satisfyResponseSLA` (AGENT role, ADMIN role, USER rejected, already
+  satisfied, not found), `recalculateResolutionSLA` (new priority config,
+  not found, no config, breached when past), `reopenSLA` (resets to
+  ON_TRACK, not found, no config), `evaluateAndPersistSLA` (no config,
+  breached detection, warning at 20%, no update when correct, not found,
+  skips RESOLVED/CLOSED), org isolation (correct org ID), and edge cases
+  (no createdAt, 1-minute window, 30-day window).
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 2 status
 
 - `tests/schema.test.js` (Vitest): validates Prisma schema structure

@@ -7,6 +7,15 @@ import {
   ticketListQuerySchema,
 } from "@/lib/validation/ticket";
 import { canTransition, getAllowedTransitions } from "./lifecycle";
+import {
+  initializeTicketSLA,
+  pauseSLA,
+  resumeSLA,
+  completeResolutionSLA,
+  reopenSLA,
+  recalculateResolutionSLA,
+  evaluateAndPersistSLA,
+} from "./sla-service";
 
 /**
  * Generate a ticket number in NIR-YYYY-000001 format.
@@ -105,6 +114,11 @@ export async function createTicket(data, user) {
     }
 
     return created;
+  });
+
+  // Initialize SLA clocks (fire-and-forget, non-blocking)
+  initializeTicketSLA(ticket.id, orgId, ticket.priority).catch((err) => {
+    console.error("SLA initialization failed:", err);
   });
 
   return ticket;
@@ -323,6 +337,13 @@ export async function updateTicket(ticketId, data, user) {
     return updatedTicket;
   });
 
+  // Recalculate resolution SLA if priority changed
+  if (parsed.priority && parsed.priority !== ticket.priority) {
+    recalculateResolutionSLA(ticketId, parsed.priority).catch((err) => {
+      console.error("SLA recalculation failed:", err);
+    });
+  }
+
   return updated;
 }
 
@@ -387,6 +408,17 @@ export async function transitionStatus(ticketId, newStatus, user) {
   });
 
   updated.allowedTransitions = getAllowedTransitions(updated.status);
+
+  // SLA lifecycle hooks (fire-and-forget)
+  if (newStatus === "WAITING_FOR_USER") {
+    pauseSLA(ticketId).catch((err) => console.error("SLA pause failed:", err));
+  } else if (newStatus === "IN_PROGRESS" && ticket.status === "WAITING_FOR_USER") {
+    resumeSLA(ticketId).catch((err) => console.error("SLA resume failed:", err));
+  } else if (newStatus === "RESOLVED") {
+    completeResolutionSLA(ticketId).catch((err) => console.error("SLA completion failed:", err));
+  } else if (newStatus === "REOPENED") {
+    reopenSLA(ticketId).catch((err) => console.error("SLA reopen failed:", err));
+  }
 
   return updated;
 }

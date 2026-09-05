@@ -6,6 +6,7 @@ import { StatusBadge, PriorityBadge } from "./status-badge";
 import Button from "@/components/ui/button";
 import AIClassification from "./ai-classification";
 import AgentRecommendation from "./agent-recommendation";
+import SLAInfo from "./sla-info";
 
 const ALLOWED_TRANSITIONS = {
   OPEN: ["ASSIGNED"],
@@ -225,6 +226,8 @@ export default function TicketDetail({ ticketId }) {
           </Button>
         </div>
       </div>
+
+      <SLAInfo ticketId={ticketId} />
 
       <AIClassification ticketId={ticketId} userRole={currentUser?.role} />
 

@@ -1,10 +1,68 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 6 — complete and verified
+## Current phase: Phase 7 — complete and verified
 
 ## Completed phases
 
-### Phase 6 — Intelligent agent assignment recommendation
+### Phase 7 — SLA Engine
+
+**What was implemented:**
+
+- SLA service (`src/lib/services/sla-service.js`):
+  - `computeSLAInfo(ticket)` — derives response/resolution SLA status, remaining time, and met flags from ticket fields
+  - `initializeTicketSLA(ticketId, orgId, priority)` — resolves SLA config from `SLAConfiguration`, calculates deadlines from `createdAt + targetMinutes`, evaluates initial status
+  - `pauseSLA(ticketId)` — sets `waitingSince`, pauses both clocks (preserves COMPLETED status)
+  - `resumeSLA(ticketId)` — clears `waitingSince`, recalculates resolution status
+  - `completeResolutionSLA(ticketId)` — sets `resolvedAt`, marks resolution as COMPLETED
+  - `satisfyResponseSLA(ticketId, role)` — sets `firstRespondedAt`, marks response as COMPLETED (AGENT/ADMIN only)
+  - `recalculateResolutionSLA(ticketId, newPriority)` — recalculates resolution due from original `createdAt` using new priority config
+  - `reopenSLA(ticketId)` — resets resolution SLA to ON_TRACK with new deadline on reopen
+  - `evaluateAndPersistSLA(ticketId)` — deterministic breach/warning evaluation, persists status changes
+- Two independent SLA clocks per spec §20:
+  - **Response SLA**: satisfied by first AGENT/ADMIN PUBLIC comment (via `satisfyResponseSLA`)
+  - **Resolution SLA**: satisfied at RESOLVED, paused during WAITING_FOR_USER, resumes on IN_PROGRESS
+- Warning threshold at 20% remaining time per spec §21
+- Elapsed time only (no business hours) — documented in UI
+- Priority changes recalculate resolution due from original ticket creation time
+- SLA initialization on ticket creation (fire-and-forget)
+- SLA lifecycle hooks in status transitions (pause/resume/complete/reopen)
+- SLA recalculation on priority change in `updateTicket`
+- API route:
+  - `GET /api/tickets/[id]/sla` — returns computed SLA info with evaluation
+- UI component:
+  - `src/components/tickets/sla-info.jsx` — SLA status panel showing response and resolution clocks, due times, remaining time, and status badges
+  - Updated `ticket-detail.jsx` to include SLA info panel
+- Phase 7 unit tests:
+  - `tests/sla-service.test.js` — 43 tests: config resolution, deadline calculation, initialization, pause/resume, completion, response satisfaction, recalculation, reopen, breach evaluation, org isolation, edge cases
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/services/sla-service.js` | Created |
+| `src/lib/services/ticket-service.js` | Modified (SLA imports, initialization, transition hooks, priority recalculation) |
+| `src/app/api/tickets/[id]/sla/route.js` | Created |
+| `src/components/tickets/sla-info.jsx` | Created |
+| `src/components/tickets/ticket-detail.jsx` | Modified (added SLAInfo import and panel) |
+| `tests/sla-service.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 321/321 passed |
+| Production build | `npm run build` | ✅ compiled, 30 routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- Response SLA is satisfied via `satisfyResponseSLA()` — no comment creation API exists yet (Phase 9). The function is ready for integration.
+- No proactive SLA breach scan yet (planned for Phase 8 with Socket.IO persistent process).
+- Business-hours SLA not implemented — elapsed time only. Documented in UI.
+- No realtime SLA notifications yet (Phase 8).
+- No admin CRUD UI for SLA configurations yet (Phase 10).
+- No SLA reporting/analytics yet (future phase).
 
 **What was implemented:**
 
@@ -66,7 +124,7 @@
 - No real AI provider integrated yet (only mock provider for classification). OpenAI or other provider to be configured via AI_PROVIDER env var.
 - AIPrediction model does not store provider/model metadata — this is a schema limitation noted in D-010.
 - Recommendation does not persist to database (computed on demand per spec §18).
-- No SLA engine yet (Phase 7).
+- ~~No SLA engine yet (Phase 7).~~ ✅ Done (Phase 7).
 - No realtime notifications yet (Phase 8).
 - No admin CRUD UI for departments/categories/tags/users yet (Phase 10).
 
@@ -372,8 +430,7 @@
 
 ## Next phase
 
-**Phase 6** — Intelligent agent assignment recommendation
-(per spec §18). Awaiting go-ahead.
+**Phase 8** — Notifications and realtime (per spec §22-§24). Awaiting go-ahead.
 
 ---
 

@@ -7,6 +7,57 @@ Newest entries at the top.
 
 ---
 
+## D-012 — SLA engine architecture (Phase 7)
+
+**Context:** Phase 7 requires SLA tracking per spec §20-21. The spec
+defines two independent SLA clocks (response and resolution), warning
+thresholds, and lifecycle behaviors, but does not specify the exact
+service architecture or evaluation mechanism.
+
+**Decision:**
+
+1. **Elapsed-time only.** Both SLA clocks use elapsed time from ticket
+   creation (`createdAt + targetMinutes`). Business-hours calculation
+   is not implemented. The UI explicitly documents "Elapsed time only —
+   business hours not applied" per spec §20 which says business-hours
+   is optional and the MVP can use elapsed time.
+
+2. **Derived status from ticket fields.** `computeSLAInfo()` derives
+   response/resolution status from the ticket's existing fields
+   (`responseSlaStatus`, `resolutionSlaStatus`, `firstRespondedAt`,
+   `waitingSince`, `status`). This avoids redundant computation and
+   keeps the source of truth in the database.
+
+3. **Fire-and-forget SLA hooks.** SLA initialization, pause, resume,
+   completion, and recalculation are called via `.catch()` on promises
+   in the ticket service. SLA failures never prevent ticket operations
+   from succeeding. This follows the same pattern as AI classification
+   (D-010).
+
+4. **No proactive breach scan yet.** The spec does not specify how
+   WARNING/BREACHED transitions are detected proactively. Per D-000
+   item 4, a periodic scan will be added in Phase 8 using the
+   persistent Node.js process. For now, `evaluateAndPersistSLA()` is
+   called on-demand when SLA info is requested via the API.
+
+5. **Response SLA satisfied by comment creation.** `satisfyResponseSLA()`
+   is ready for integration with the comment creation endpoint (Phase 9).
+   It checks author role (AGENT/ADMIN) and sets `firstRespondedAt`. No
+   comments API exists yet, so the function is exported but not yet
+   called from any route.
+
+6. **Priority change recalculates from original createdAt.** Per spec
+   §21, when priority changes, the resolution due time is recalculated
+   as `createdAt + newPriorityConfig.resolutionTimeMinutes`. The
+   existing elapsed time is used to determine if the new deadline is
+   breached.
+
+7. **Reopen resets resolution clock.** Per spec §21, reopening a ticket
+   resets the resolution SLA to ON_TRACK and recalculates the deadline
+   from the original creation time.
+
+---
+
 ## D-011 — Agent recommendation architecture (Phase 6)
 
 **Context:** Phase 6 requires intelligent agent assignment recommendation

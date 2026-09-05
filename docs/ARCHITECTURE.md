@@ -22,8 +22,8 @@ Next.js App Router route handlers        Socket.IO (planned, Phase 8,
   (auth, tickets, comments, ...)          hosted in a custom server.js)
         │
         ▼
-Service layer (lib/services/*)  ──►  AI service abstraction (planned, Phase 5/6)
-        │                             SLA engine (planned, Phase 7)
+Service layer (lib/services/*)  ──►  AI service abstraction (Phase 5/6)
+        │                             SLA engine (Phase 7)
         ▼
 Prisma Client  ──►  Supabase PostgreSQL
 ```
@@ -150,6 +150,7 @@ Current (Phase 6):
       ticket-service.js        # ticket CRUD + assignment + transitions
       ai-classification-service.js  # AI classification orchestration
       agent-recommendation-service.js # AI agent recommendation (scoring, eligibility)
+      sla-service.js           # SLA clock management (init, pause, resume, breach eval)
     /ai/
       provider.js              # BaseProvider class, provider registry
       validation.js            # Zod schemas for AI input/output
@@ -177,6 +178,7 @@ Current (Phase 6):
   ai-classification-service.test.js  # Vitest — classification service
   recommendation-schema.test.js      # Vitest — recommendation validation schemas
   agent-recommendation-service.test.js # Vitest — agent recommendation service
+  sla-service.test.js                 # Vitest — SLA clock management
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -313,3 +315,27 @@ system. Event names, rooms, and payload shape follow spec §24 exactly
    workload/experience, score agents, generate confidence, build
    ranked output with explanations.
 3. Return deterministic response — no external AI call, no persistence.
+
+## SLA engine (Phase 7)
+
+Two independent SLA clocks per spec §20-21:
+
+- **Response SLA**: starts at ticket creation, satisfied by first
+  AGENT/ADMIN PUBLIC comment (via `satisfyResponseSLA()`).
+- **Resolution SLA**: starts at ticket creation, satisfied at RESOLVED,
+  paused during WAITING_FOR_USER, resumes on IN_PROGRESS.
+
+SLA status derivation (in `computeSLAInfo()`):
+- `COMPLETED` — clock satisfied (firstRespondedAt set / status RESOLVED+)
+- `PAUSED` — waitingSince is set
+- `BREACHED` — remaining time < 0
+- `WARNING` — remaining time ≤ 20% of original duration
+- `ON_TRACK` — default
+
+Integration points in `ticket-service.js`:
+- `createTicket` → fire-and-forget `initializeTicketSLA()`
+- `transitionStatus` → `pauseSLA()`, `resumeSLA()`, `completeResolutionSLA()`, `reopenSLA()`
+- `updateTicket` → `recalculateResolutionSLA()` on priority change
+
+API: `GET /api/tickets/[id]/sla` — evaluates and returns SLA info.
+UI: `sla-info.jsx` panel on ticket detail page.
