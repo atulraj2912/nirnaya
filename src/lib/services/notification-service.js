@@ -268,3 +268,44 @@ export async function notifyTicketReopened({
     organizationId,
   });
 }
+
+export async function notifyCommentAdded({
+  ticketId,
+  ticketNumber,
+  authorId,
+  authorUsername,
+  visibility,
+  recipientId,
+  organizationId,
+}) {
+  if (authorId === recipientId) return null;
+
+  if (visibility === "INTERNAL") return null;
+
+  return createNotification({
+    type: "COMMENT_ADDED",
+    message: `${authorUsername || "Someone"} commented on ticket ${ticketNumber}`,
+    ticketId,
+    recipientId,
+    organizationId,
+  });
+}
+
+export async function notifyWatcherAdded({
+  ticketId,
+  ticketNumber,
+  watcherId,
+  watcherUsername,
+  recipientId,
+  organizationId,
+}) {
+  if (watcherId === recipientId) return null;
+
+  return createNotification({
+    type: "WATCHER_ADDED",
+    message: `${watcherUsername || "Someone"} is now watching ticket ${ticketNumber}`,
+    ticketId,
+    recipientId,
+    organizationId,
+  });
+}

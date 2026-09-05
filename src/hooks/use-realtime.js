@@ -11,6 +11,7 @@ import {
   onTicketUpdated,
   onTicketStatusChanged,
   onTicketAssigned,
+  onTicketCommentAdded,
 } from "@/lib/realtime/socket-client";
 
 export function useSocketConnection(token) {
@@ -59,6 +60,14 @@ export function useTicketRealtime(ticketId, callbacks = {}) {
       onTicketAssigned((data) => {
         if (data.ticketId === ticketId && callbacksRef.current.onAssigned) {
           callbacksRef.current.onAssigned(data);
+        }
+      })
+    );
+
+    cleanups.push(
+      onTicketCommentAdded((data) => {
+        if (data.ticketId === ticketId && callbacksRef.current.onCommentAdded) {
+          callbacksRef.current.onCommentAdded(data);
         }
       })
     );

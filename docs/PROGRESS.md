@@ -1,10 +1,98 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 8 — complete and verified
+## Current phase: Phase 9 — complete and verified
 
 ## Completed phases
 
-### Phase 8 — Notifications and Realtime
+### Phase 9 — Comments, Watchers and Activity Timeline
+
+**What was implemented:**
+
+- **Comment service** (`src/lib/services/comment-service.js`):
+  - `createComment({ ticketId, content, visibility }, user)` — validates content, visibility, ticket existence, org isolation, role permissions (USER cannot create INTERNAL); creates comment; triggers SLA response satisfaction for AGENT/ADMIN PUBLIC comments; notifies requester and watchers
+  - `listTicketComments(ticketId, user, options)` — org-scoped, role-filtered (USER sees PUBLIC only), paginated, ordered by createdAt ascending
+  - `getComment(commentId, user)` — org-scoped, visibility-filtered (USER cannot see INTERNAL), ticket-access authorization
+  - `canSeeInternalComment(user)` — helper to check if user can see INTERNAL comments
+  - `filterCommentsForUser(comments, user)` — filters comments based on user role
+- **Watcher service** (`src/lib/services/watcher-service.js`):
+  - `addWatcher(ticketId, userId, user)` — org-scoped, validates target user, role-based permissions (USER can only watch own tickets), idempotent (returns existing watcher)
+  - `removeWatcher(ticketId, userId, user)` — org-scoped, role-based, idempotent (safe to remove non-existent)
+  - `listWatchers(ticketId, user)` — org-scoped, returns watchers with user details
+  - `isWatching(ticketId, userId)` — utility to check watch status
+- **Activity timeline service** (`src/lib/services/activity-service.js`):
+  - `listTicketActivity(ticketId, user, options)` — assembles timeline from persisted domain data (no new Activity model)
+  - Sources: ticket creation, status changes, assignment history, comments (PUBLIC only for USER), SLA response, resolution, closure
+  - Org-scoped, role-aware (USER excluded from INTERNAL comments), chronologically ordered (newest first), paginated
+- **Comment API routes**:
+  - `GET /api/tickets/[id]/comments` — paginated list with visibility filtering
+  - `POST /api/tickets/[id]/comments` — create comment with validation
+- **Watcher API routes**:
+  - `GET /api/tickets/[id]/watchers` — list watchers
+  - `POST /api/tickets/[id]/watchers` — add watcher (supports adding other users for AGENT/ADMIN)
+  - `DELETE /api/tickets/[id]/watchers?userId=...` — remove watcher
+- **Activity timeline API route**:
+  - `GET /api/tickets/[id]/activity` — paginated activity timeline
+- **Notification integration**:
+  - `notifyCommentAdded()` — notifies ticket requester and watchers about new PUBLIC comments; INTERNAL comments do not notify unauthorized users; self-notifications prevented
+  - `notifyWatcherAdded()` — notifies when a user is added as watcher
+  - Integrated into `comment-service.js` createComment flow
+- **SLA response integration**:
+  - `satisfyResponseSLA()` (Phase 7) now called from `createComment()` for PUBLIC comments by AGENT/ADMIN
+  - Fire-and-forget, non-blocking
+  - Idempotent (SLA service already handles already-satisfied case)
+- **Realtime events**:
+  - `ticket:comment_added` event added to `socket-client.js`
+  - `onTicketCommentAdded()` callback in socket client
+  - `useTicketRealtime` hook updated to listen for comment events
+- **UI components**:
+  - `src/components/comments/comment-list.jsx` — displays comments with author, timestamp, visibility badge, loading/empty states
+  - `src/components/comments/comment-form.jsx` — textarea form with INTERNAL checkbox (AGENT/ADMIN only), validation, loading state
+  - `src/components/watchers/watcher-toggle.jsx` — watch/unwatch button with watcher list toggle, loading state
+  - `src/components/activity/activity-timeline.jsx` — chronological timeline with icons, timestamps, descriptions, loading/empty states
+- **Ticket detail integration**:
+  - Updated `ticket-detail.jsx` to include CommentForm, CommentList, WatcherToggle, and ActivityTimeline
+  - Comment list auto-refreshes after adding a comment via key-based remount
+  - Replaced old inline comments section with dedicated CommentList component
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/services/comment-service.js` | Created |
+| `src/lib/services/watcher-service.js` | Created |
+| `src/lib/services/activity-service.js` | Created |
+| `src/app/api/tickets/[id]/comments/route.js` | Created |
+| `src/app/api/tickets/[id]/watchers/route.js` | Created |
+| `src/app/api/tickets/[id]/activity/route.js` | Created |
+| `src/components/comments/comment-list.jsx` | Created |
+| `src/components/comments/comment-form.jsx` | Created |
+| `src/components/watchers/watcher-toggle.jsx` | Created |
+| `src/components/activity/activity-timeline.jsx` | Created |
+| `src/lib/services/notification-service.js` | Modified (notifyCommentAdded, notifyWatcherAdded) |
+| `src/lib/realtime/socket-client.js` | Modified (onTicketCommentAdded) |
+| `src/hooks/use-realtime.js` | Modified (comment event listener) |
+| `src/components/tickets/ticket-detail.jsx` | Modified (integrated new components) |
+| `tests/comment-service.test.js` | Created |
+| `tests/watcher-service.test.js` | Created |
+| `tests/activity-service.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, pre-existing) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 441/441 passed |
+| Production build | `npm run build` | ✅ compiled, 36 routes generated |
+| Git diff check | `git diff --check` | ✅ only CRLF warnings |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- No admin CRUD UI for departments/categories/tags/users yet (Phase 10)
+- No advanced watcher management UI (e.g., bulk operations) — basic watch/unwatch only
+- Activity timeline is assembled from existing persisted data; no dedicated Activity/Audit model was needed per spec §16
+- No comment edit/delete functionality — not required by spec §14
+- No watcher-specific realtime events (watcher added/removed notifications use Phase 8 notification infrastructure)
 
 **What was implemented:**
 
@@ -527,7 +615,7 @@
 
 ## Next phase
 
-**Phase 9** — Comments, watchers and activity timeline (per spec §14-§16). Awaiting go-ahead.
+**Phase 10** — Dashboard, analytics and administrative UI (per spec §32). Awaiting go-ahead.
 
 ---
 

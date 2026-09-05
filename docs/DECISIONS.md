@@ -7,6 +7,65 @@ Newest entries at the top.
 
 ---
 
+## D-013 — Comments, watchers and activity timeline architecture (Phase 9)
+
+**Context:** Phase 9 requires comments, watchers, and activity timeline
+per spec §14-§16. The spec defines comment visibility rules, watcher
+operations, and activity timeline content, but does not specify exact
+service boundaries, notification routing for comments, or whether the
+activity timeline requires a dedicated model.
+
+**Decision:**
+
+1. **Activity timeline assembled from existing persisted data.** Per
+   spec §16 ("Reuse existing domain history such as TicketAssignmentHistory,
+   timestamps, comments, notifications, existing persisted AI prediction
+   information. Avoid creating a duplicate generic audit model unless there
+   is a strong architectural reason."), the timeline is built by querying
+   existing domain entities (comments, assignment history, ticket timestamps)
+   rather than creating a new Activity/Audit model. This avoids schema
+   bloat while satisfying the specification.
+
+2. **Comment service handles notification routing.** The comment service
+   (`src/lib/services/comment-service.js`) handles notification creation
+   for new comments rather than delegating to a separate orchestrator.
+   This keeps the comment domain cohesive. Notifications are sent to:
+   - ticket requester (if not the comment author)
+   - all watchers (if not the comment author)
+   Internal comments do NOT generate notifications for users who cannot
+   see them (USER role), per spec §14.
+
+3. **SLA response satisfaction integrated at comment creation boundary.**
+   `satisfyResponseSLA()` is called from `createComment()` for PUBLIC
+   comments by AGENT/ADMIN users, per spec §20. The call is
+   fire-and-forget to avoid blocking comment creation on SLA failures.
+   The SLA service's own idempotency (already satisfied = no-op) ensures
+   correctness.
+
+4. **Watcher permissions follow spec §15 rules.** USER can only watch
+   tickets they created (requester). AGENT/ADMIN can watch any
+   organization ticket they can access. Adding yourself as watcher is
+   always allowed. Adding other users requires AGENT/ADMIN role. All
+   watcher operations validate org isolation server-side.
+
+5. **Comment visibility enforced server-side.** The comment list API
+   filters INTERNAL comments before returning to USER role clients.
+   The comment get API returns 404 for INTERNAL comments when accessed
+   by USER. This follows spec §14's requirement that "Internal comments
+   must never leak through REST responses."
+
+6. **No comment edit/delete in V1.** Spec §14 does not explicitly require
+   comment editing or deletion capabilities. The implementation provides
+   create and read only, keeping V1 scope controlled. This can be added
+   later if the spec is explicitly extended.
+
+7. **Activity timeline does not expose internal comments to USER.**
+   The activity service filters out INTERNAL comment entries when the
+   requesting user has USER role, per spec §16 ("USER must not receive
+   internal activity that reveals internal-only information").
+
+---
+
 ## D-012 — SLA engine architecture (Phase 7)
 
 **Context:** Phase 7 requires SLA tracking per spec §20-21. The spec

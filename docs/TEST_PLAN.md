@@ -175,6 +175,40 @@ Results of running these are recorded in `PROGRESS.md`.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 9 status
+
+- `tests/comment-service.test.js` (Vitest): 33 tests covering
+  `createComment` (valid PUBLIC comment, empty comment rejected,
+  whitespace-only rejected, excessive length rejected, invalid visibility
+  rejected, nonexistent ticket rejected, cross-org rejected, USER access
+  denied on other's ticket, USER INTERNAL creation rejected, AGENT INTERNAL
+  allowed, ADMIN INTERNAL allowed, content trimming, SLA satisfaction for
+  AGENT PUBLIC, SLA satisfaction for ADMIN PUBLIC, USER comment no SLA,
+  INTERNAL comment no SLA, notification to requester, notification to
+  watchers, no self-notification, default PUBLIC visibility),
+  `listTicketComments` (authorized access, INTERNAL filtered for USER,
+  INTERNAL shown for AGENT, nonexistent ticket, cross-org, USER access
+  denied, pagination, ordering by createdAt asc),
+  `getComment` (authorized access, nonexistent comment, INTERNAL rejected
+  for USER, AGENT INTERNAL allowed, cross-org rejected).
+- `tests/watcher-service.test.js` (Vitest): 23 tests covering
+  `addWatcher` (self-watch, AGENT adds other user, USER cannot add other,
+  nonexistent ticket, cross-org, USER access denied, cross-org target user,
+  inactive target user, idempotent existing watcher, ADMIN adds other),
+  `removeWatcher` (self-remove, idempotent non-existent, USER cannot remove
+  other, nonexistent ticket, cross-org, AGENT removes other),
+  `listWatchers` (authorized access, nonexistent ticket, cross-org, USER
+  access denied, empty list), `isWatching` (true/false cases).
+- `tests/activity-service.test.js` (Vitest): 15 tests covering
+  `listTicketActivity` (ticket creation activity, assignment history,
+  public comments, internal comments excluded for USER, internal comments
+  shown for AGENT, SLA response activity, resolution activity, closure
+  activity, timestamp ordering descending, nonexistent ticket, cross-org,
+  USER access denied, pagination, pagination metadata, status change
+  activity).
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 2 status
 
 - `tests/schema.test.js` (Vitest): validates Prisma schema structure

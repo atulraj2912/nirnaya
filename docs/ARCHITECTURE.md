@@ -339,3 +339,83 @@ Integration points in `ticket-service.js`:
 
 API: `GET /api/tickets/[id]/sla` — evaluates and returns SLA info.
 UI: `sla-info.jsx` panel on ticket detail page.
+
+## Comments, watchers and activity timeline (Phase 9)
+
+### Comment architecture
+
+Comments are managed by `src/lib/services/comment-service.js`. Key
+design decisions:
+
+- **Two visibility types:** PUBLIC (visible to all authorized users)
+  and INTERNAL (visible to AGENT/ADMIN only), per spec §14.
+- **Server-side visibility enforcement:** The comment list API filters
+  INTERNAL comments before returning to USER role. The single comment
+  API returns 404 for INTERNAL comments accessed by USER.
+- **SLA integration:** PUBLIC comments by AGENT/ADMIN trigger
+  `satisfyResponseSLA()` (fire-and-forget, non-blocking). USER comments
+  and INTERNAL comments do NOT satisfy response SLA, per spec §20.
+- **Notification routing:** New PUBLIC comments notify the ticket
+  requester and all watchers (excluding the comment author). INTERNAL
+  comments do not notify users who cannot see them.
+- **No edit/delete:** Spec §14 does not require these capabilities.
+  V1 provides create and read only.
+
+API:
+- `GET /api/tickets/[id]/comments` — paginated, visibility-filtered
+- `POST /api/tickets/[id]/comments` — create comment
+
+### Watcher architecture
+
+Watchers are managed by `src/lib/services/watcher-service.js`. Key
+design decisions:
+
+- **Duplicate prevention:** Uses the existing `@@unique([ticketId, userId])`
+  constraint. Repeated watch requests return the existing record (idempotent).
+- **Permission model:**
+  - USER can watch own tickets (as requester) — can add/remove self
+  - AGENT/ADMIN can watch any accessible ticket — can add/remove self and others
+- **Org isolation:** All operations validate ticket and user belong to
+  the same organization server-side.
+- **Notification integration:** Watcher addition generates notifications
+  via `notifyWatcherAdded()`.
+
+API:
+- `GET /api/tickets/[id]/watchers` — list watchers with user details
+- `POST /api/tickets/[id]/watchers` — add watcher
+- `DELETE /api/tickets/[id]/watchers?userId=...` — remove watcher
+
+### Activity timeline architecture
+
+The activity timeline is assembled by `src/lib/services/activity-service.js`
+from existing persisted domain data. Per spec §16, no dedicated Activity/Audit
+model was created — the timeline is built from:
+
+- **Ticket creation** — from ticket `createdAt` and metadata
+- **Status changes** — derived from current ticket status
+- **Assignment history** — from `TicketAssignmentHistory` model
+- **Comments** — from `Comment` model (INTERNAL excluded for USER)
+- **SLA events** — from `firstRespondedAt`, `resolvedAt`, `closedAt`
+- **Priority changes** — from ticket fields
+
+Timeline ordering: newest first, with stable secondary sort by ID.
+Paginated with configurable limit.
+
+API: `GET /api/tickets/[id]/activity` — paginated, org/role-scoped
+
+### Realtime integration
+
+- New event: `ticket:comment_added` — emitted after comment creation
+  with safe metadata only (commentId, isInternal, author info, timestamp).
+  Comment content is NOT sent through the socket, per spec §24.
+- `useTicketRealtime` hook listens for `ticket:comment_added` events.
+
+### Data flow for comment creation
+
+1. Route handler: authenticate, parse ticket ID + body.
+2. Comment service: validate content/visibility, verify ticket org and
+   user access, enforce role rules (USER cannot create INTERNAL).
+3. Prisma: persist comment.
+4. SLA: fire-and-forget `satisfyResponseSLA()` for qualifying comments.
+5. Notifications: fire-and-forget notify requester + watchers.
+6. Return created comment with author details.

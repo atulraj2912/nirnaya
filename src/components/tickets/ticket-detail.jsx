@@ -7,6 +7,10 @@ import Button from "@/components/ui/button";
 import AIClassification from "./ai-classification";
 import AgentRecommendation from "./agent-recommendation";
 import SLAInfo from "./sla-info";
+import CommentList from "@/components/comments/comment-list";
+import CommentForm from "@/components/comments/comment-form";
+import WatcherToggle from "@/components/watchers/watcher-toggle";
+import ActivityTimeline from "@/components/activity/activity-timeline";
 
 const ALLOWED_TRANSITIONS = {
   OPEN: ["ASSIGNED"],
@@ -36,6 +40,7 @@ export default function TicketDetail({ ticketId }) {
   const [agents, setAgents] = useState([]);
   const [assignAgentId, setAssignAgentId] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [commentsKey, setCommentsKey] = useState(0);
 
   useEffect(() => {
     async function fetchTicket() {
@@ -252,25 +257,20 @@ export default function TicketDetail({ ticketId }) {
         </div>
       )}
 
-      {ticket.comments?.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-6">
-          <h2 className="mb-4 text-sm font-semibold text-text">Comments</h2>
-          <div className="space-y-4">
-            {ticket.comments.map((c) => (
-              <div key={c.id} className="border-l-2 border-border pl-4">
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <span className="font-medium text-text">{c.author?.username}</span>
-                  <span>{new Date(c.createdAt).toLocaleString()}</span>
-                  {c.visibility === "INTERNAL" && (
-                    <span className="rounded bg-warning-100 px-1.5 py-0.5 text-warning-800">Internal</span>
-                  )}
-                </div>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-text">{c.content}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <WatcherToggle ticketId={ticketId} currentUser={currentUser} />
+
+      <div className="rounded-xl border border-border bg-surface p-6">
+        <h2 className="mb-4 text-sm font-semibold text-text">Add Comment</h2>
+        <CommentForm
+          ticketId={ticketId}
+          userRole={currentUser?.role}
+          onCommentAdded={() => setCommentsKey((k) => k + 1)}
+        />
+      </div>
+
+      <CommentList key={commentsKey} ticketId={ticketId} />
+
+      <ActivityTimeline ticketId={ticketId} />
     </div>
   );
 }

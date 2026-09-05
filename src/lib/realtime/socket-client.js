@@ -99,3 +99,9 @@ export function onTicketAssigned(callback) {
   socket.on("ticket:assigned", callback);
   return () => socket.off("ticket:assigned", callback);
 }
+
+export function onTicketCommentAdded(callback) {
+  if (!socket) return () => {};
+  socket.on("ticket:comment_added", callback);
+  return () => socket.off("ticket:comment_added", callback);
+}
