@@ -228,3 +228,49 @@ Results of running these are recorded in `PROGRESS.md`.
   counter, progress logging.
 
 Results of running these are recorded in `PROGRESS.md`.
+
+## Phase 10 status
+
+- `tests/user-admin-service.test.js` (Vitest): 18 tests covering
+  `listUsers` (paginated results, search filter, role filter, status
+  filter, org isolation), `getUser` (authorized access, 404 for missing,
+  404 for cross-org), `createUser` (valid creation with hashed password,
+  duplicate username rejected, duplicate email rejected, department
+  validation), `updateUser` (field updates, duplicate username during
+  update rejected, last admin demotion prevented, cross-org rejected),
+  `deactivateUser` (sets INACTIVE, last admin deactivation prevented,
+  non-existent user rejected).
+- `tests/department-service.test.js` (Vitest): 8 tests covering
+  `listDepartments` (results with counts, search filter), `createDepartment`
+  (valid creation, duplicate name rejected, duplicate code rejected),
+  `updateDepartment` (field updates, cross-org rejected).
+- `tests/category-admin-service.test.js` (Vitest): 8 tests covering
+  `listCategories` (results with counts, search filter, isActive filter),
+  `createCategory` (valid creation, duplicate name rejected), `updateCategory`
+  (field updates, toggle isActive, cross-org rejected, duplicate name
+  during update rejected).
+- `tests/tag-admin-service.test.js` (Vitest): 8 tests covering
+  `listTags` (results with usage counts, search filter), `createTag`
+  (valid creation, duplicate name rejected), `deleteTag` (hard delete,
+  non-existent rejected, cross-org rejected).
+- `tests/sla-config-service.test.js` (Vitest): 10 tests covering
+  `listSLAConfigs` (ordered by priority), `getSLAConfig` (authorized,
+  non-existent, cross-org), `createSLAConfig` (valid, resolution < response
+  rejected, duplicate priority rejected), `updateSLAConfig` (field updates,
+  cross-field validation, non-existent, cross-org).
+- `tests/dashboard-service.test.js` (Vitest): 2 tests covering
+  `getDashboardStats` (comprehensive stats with all counters, recent
+  tickets retrieval).
+- `tests/admin-validation.test.js` (Vitest): 18 tests covering all
+  Zod schemas — `createUserSchema` (valid, missing required fields,
+  invalid role, short password), `updateUserSchema` (partial, empty),
+  `createDepartmentSchema` (valid, missing required), `createCategorySchema`
+  (valid, missing name), `createTagSchema` (valid, missing name),
+  `createSLAConfigSchema` (valid, invalid priority, non-numeric times),
+  `updateOrgSettingsSchema` (partial, timezone).
+- `tests/admin-api-routes.test.js` (Vitest): 8 tests covering auth
+  guards (403 for non-admin, 401 for unauthenticated) and successful
+  responses (users list, user creation, dashboard stats, departments,
+  categories, tags, SLA configs).
+
+Results of running these are recorded in `PROGRESS.md`.

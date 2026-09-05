@@ -1,8 +1,84 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 9 — complete and verified
+## Current phase: Phase 10 — complete and verified
 
 ## Completed phases
+
+### Phase 10 — Administration, Organization Management & Platform Completion
+
+**What was implemented:**
+
+- **Admin validation schemas** (`src/lib/validation/admin.js`):
+  - `createUserSchema` — username (3-50 chars, alphanumeric/dots/hyphens), email, password (8-128), role, departmentId (required), employeeId (optional), designation (optional)
+  - `updateUserSchema` — all fields optional for partial updates
+  - `createDepartmentSchema` — name (1-100), code (1-20, uppercase/numbers/hyphens), managerId (optional)
+  - `updateDepartmentSchema` — partial fields + isActive
+  - `createCategorySchema` — name (1-100)
+  - `updateCategorySchema` — name + isActive
+  - `createTagSchema` — name (1-50)
+  - `createSLAConfigSchema` — priority enum, responseTimeMinutes, resolutionTimeMinutes (1-43200)
+  - `updateSLAConfigSchema` — partial response/resolution times
+  - `updateOrgSettingsSchema` — name, description, businessHoursStart/End, timezone
+
+- **Admin services**:
+  - `user-admin-service.js` — `listUsers` (paginated, filterable by search/role/status/department), `getUser` (org-scoped), `createUser` (uniqueness checks, department validation, password hashing), `updateUser` (last-admin protection, uniqueness), `deactivateUser` (last-admin protection)
+  - `department-service.js` — `listDepartments` (with user/ticket counts, manager), `createDepartment` (uniqueness on name+code, manager validation), `updateDepartment` (uniqueness, manager validation)
+  - `category-admin-service.js` — `listCategories` (with ticket counts, isActive filter), `createCategory` (uniqueness), `updateCategory` (uniqueness, toggle isActive)
+  - `tag-admin-service.js` — `listTags` (with usage counts), `createTag` (uniqueness), `deleteTag` (hard delete)
+  - `sla-config-service.js` — `listSLAConfigs`, `getSLAConfig`, `createSLAConfig` (priority uniqueness, resolution >= response validation), `updateSLAConfig` (cross-field validation)
+  - `dashboard-service.js` — `getDashboardStats` (ticket counts by status, SLA breach/warning counts, user/dept/category/tag totals, recent 10 tickets)
+
+- **Admin API routes** (all require ADMIN role, org-scoped):
+  - `GET /api/admin/dashboard` — dashboard statistics
+  - `GET/POST /api/admin/users` — list (paginated, filterable) + create
+  - `PATCH/DELETE /api/admin/users/[id]` — update + deactivate (soft-delete)
+  - `GET/POST /api/admin/departments` — list + create
+  - `PATCH /api/admin/departments/[id]` — update
+  - `GET/POST /api/admin/categories` — list + create
+  - `PATCH /api/admin/categories/[id]` — update (toggle active)
+  - `GET/POST /api/admin/tags` — list + create
+  - `DELETE /api/admin/tags/[id]` — hard delete
+  - `GET/POST /api/admin/sla-configs` — list + create
+  - `PATCH /api/admin/sla-configs/[id]` — update
+  - `GET/PATCH /api/admin/settings` — org settings read + update
+
+- **Admin UI pages** (all interactive with tables, forms, modals):
+  - Dashboard (`/dashboard`) — real stats from API: ticket counts, SLA status, user counts, recent tickets
+  - Users (`/admin/users`) — paginated table, search/filter by role/status, create/edit modal, deactivate
+  - Departments (`/admin/departments`) — table with counts, create/edit modal
+  - Categories (`/admin/categories`) — table with ticket counts, create/edit, activate/deactivate toggle
+  - Tags (`/admin/tags`) — table with usage counts, create/delete
+  - SLA Config (`/admin/sla`) — priority-based table, create/edit modal with time inputs
+  - Settings (`/admin/settings`) — org name, description, business hours, timezone
+
+- **Sidebar role-based filtering** (`src/components/layout/sidebar.jsx`):
+  - Administration section only visible to ADMIN role users
+
+- **Bug fixes**:
+  - Fixed `user-admin-service.js` admin demotion check logic (was checking parsed.role instead of existing.role)
+  - Fixed `requireAdmin` usage in all admin API routes (was calling without `request` parameter, destructuring `{ error }` instead of `{ response }`)
+  - Fixed `sla-scan/route.js` auth pattern
+
+- **Tests** (80 new tests, 521 total):
+  - `user-admin-service.test.js` — 18 tests covering CRUD, uniqueness, org isolation, last-admin protection
+  - `department-service.test.js` — 8 tests covering CRUD, uniqueness, org isolation
+  - `category-admin-service.test.js` — 8 tests covering CRUD, uniqueness, isActive toggle
+  - `tag-admin-service.test.js` — 8 tests covering CRUD, uniqueness, hard delete
+  - `sla-config-service.test.js` — 10 tests covering CRUD, priority uniqueness, time validation, org isolation
+  - `dashboard-service.test.js` — 2 tests covering stats aggregation and recent tickets
+  - `admin-validation.test.js` — 18 tests covering all Zod schemas (valid, invalid, edge cases)
+  - `admin-api-routes.test.js` — 8 tests covering auth guards and successful responses
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass, no issues |
+| Prisma schema syntax | `npx prisma validate` | ✅ valid |
+| Unit tests (Vitest) | `npx vitest run` | ✅ 521/521 passed |
+| Production build | `npx next build` | ✅ compiled, 44 routes generated |
+
+---
 
 ### Phase 9 — Comments, Watchers and Activity Timeline
 

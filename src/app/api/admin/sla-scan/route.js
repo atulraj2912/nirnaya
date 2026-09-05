@@ -3,10 +3,10 @@ import { requireAdmin } from "@/lib/authz";
 import { runSLABreachScan } from "@/lib/services/sla-scan-service";
 
 export async function POST(request) {
-  try {
-    const { user, error } = await requireAdmin(request);
-    if (error) return error;
+  const { user, response } = await requireAdmin(request);
+  if (response) return response;
 
+  try {
     const result = await runSLABreachScan(user.organizationId);
     return NextResponse.json(result);
   } catch (error) {

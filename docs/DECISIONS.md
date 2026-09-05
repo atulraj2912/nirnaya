@@ -7,6 +7,54 @@ Newest entries at the top.
 
 ---
 
+## D-014 — Administration and organization management architecture (Phase 10)
+
+**Context:** Phase 10 requires admin dashboard, analytics, and administrative
+UI per spec §32. The spec defines organizational management, user administration,
+category/tag management, SLA configuration, and platform settings but does not
+specify exact service boundaries, admin validation rules, or last-admin protection
+strategies.
+
+**Decision:**
+
+1. **Service-per-resource pattern for admin CRUD.** Each admin-managed entity
+   (users, departments, categories, tags, SLA configs) has its own dedicated
+   service file (`user-admin-service.js`, `department-service.js`, etc.) rather
+   than a monolithic admin service. This follows the existing pattern from
+   Phase 4 (`ticket-service.js`) and Phase 9 (`comment-service.js`,
+   `watcher-service.js`) where each domain area has its own service with
+   clear responsibility boundaries.
+
+2. **Last-admin protection.** When updating or deactivating a user with
+   ADMIN role, the service checks if they are the last ACTIVE admin in
+   the organization. If so, the operation is rejected with a clear error
+   message. This prevents accidental lockout from administrative functions.
+   The check is: `count(ADMIN where ACTIVE) <= 1 && existing.role === "ADMIN"`.
+
+3. **Tag hard delete, category soft delete.** Tags use hard delete (`prisma.tag.delete`)
+   since the Tag model has no `isActive` field and tags are lightweight metadata.
+   Categories use soft delete (`isActive = false`) since the Category model has
+   `isActive` and categories are referenced by tickets. This preserves data
+   integrity for historical ticket categorization.
+
+4. **Dashboard stats via aggregation service.** Rather than having each admin page
+   fetch its own stats, a centralized `dashboard-service.js` aggregates all
+   statistics (ticket counts, SLA status, user/dept/category/tag totals) in a
+   single efficient query set. The dashboard page fetches from a single
+   `GET /api/admin/dashboard` endpoint.
+
+5. **Zod validation schemas in dedicated file.** All admin mutation schemas are
+   co-located in `src/lib/validation/admin.js` rather than scattered across
+   service files. This follows the Phase 4 pattern (`src/lib/validation/ticket.js`)
+   and keeps validation logic centralized and testable.
+
+6. **Sidebar role-based filtering.** The Administration nav section is only visible
+   to users with ADMIN role. This is a client-side filter (not a server guard)
+   since the sidebar is a purely presentational component. All admin API routes
+   independently enforce ADMIN role via `requireAdmin(request)`.
+
+---
+
 ## D-013 — Comments, watchers and activity timeline architecture (Phase 9)
 
 **Context:** Phase 9 requires comments, watchers, and activity timeline

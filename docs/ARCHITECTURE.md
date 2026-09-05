@@ -2,8 +2,7 @@
 
 This document describes the technical architecture, directory
 structure, data flow, and service boundaries. It is updated as each
-phase lands real code; sections marked "(planned)" describe the
-target shape for a phase that has not been implemented yet.
+phase lands real code.
 
 ## Overview
 
@@ -16,10 +15,10 @@ rules this repository must not deviate from.
 
 ```
 Browser (React 19 + Tailwind 4 + React Query 5)
-        │  HTTP (cookies: access/refresh JWT)      │ WebSocket (planned, Phase 8)
+        │  HTTP (cookies: access/refresh JWT)      │ WebSocket
         ▼                                           ▼
-Next.js App Router route handlers        Socket.IO (planned, Phase 8,
-  (auth, tickets, comments, ...)          hosted in a custom server.js)
+Next.js App Router route handlers        Socket.IO (custom server.js,
+  (auth, tickets, comments, admin, ...)   real-time notifications)
         │
         ▼
 Service layer (lib/services/*)  ──►  AI service abstraction (Phase 5/6)
@@ -37,16 +36,16 @@ Prisma Client  ──►  Supabase PostgreSQL
 - **API route handlers** (`src/app/api/**/route.js`) — thin: parse
   request, call `authz` + service layer, return response. No large
   business rules live here.
-- **authentication** (planned: `src/lib/auth/*`, Phase 3) — password
+- **authentication** (`src/lib/auth/*`) — password
   hashing (bcrypt), JWT issuing/verification (jose), HTTP-only cookie
   handling.
-- **authorization** (planned: `src/lib/authz/*`, Phase 3) —
+- **authorization** (`src/lib/authz/*`) —
   `requireAuth`, `requireRole`, `requireAdmin`, `requireAgentOrAdmin`,
   and organization-scoping helpers, used by every route handler that
   touches organization-owned data.
-- **business/service logic** (planned: `src/lib/services/*`, from
-  Phase 4 onward) — ticket lifecycle, comments, watchers, activity,
-  notifications, assignment, etc. This is where spec rules actually
+- **business/service logic** (`src/lib/services/*`) — ticket lifecycle,
+  comments, watchers, activity, notifications, assignment, admin CRUD,
+  dashboard stats, etc. This is where spec rules actually
   live, not in components or route handlers (spec §4).
 - **environment validation** (`src/lib/env.js`, Phase 1) — server-side
   only; Zod-validated env vars with fail-fast behavior. Must not be
@@ -55,19 +54,19 @@ Prisma Client  ──►  Supabase PostgreSQL
   14 models and 9 enums; `src/lib/db/prisma.js` — singleton client
   with global cache) — schema and connection only; no query logic
   beyond thin data-access use inside services.
-- **validation** (`src/lib/validation/*`, Zod schemas, from Phase 4 onward).
+- **validation** (`src/lib/validation/*`, Zod schemas).
 - **AI services** (`src/lib/ai/*`, `src/lib/services/ai-classification-service.js`,
   Phase 5) — provider-agnostic classification interface with
   mock provider; see "AI provider abstraction" below.
-- **SLA engine** (planned: `src/lib/services/sla-engine.js`, Phase 7).
-- **notifications** (planned: `src/lib/services/notification-service.js`,
+- **SLA engine** (`src/lib/services/sla-service.js`, Phase 7).
+- **notifications** (`src/lib/services/notification-service.js`,
   Phase 8).
-- **realtime/socket functionality** (planned: `src/lib/realtime/*` +
+- **realtime/socket functionality** (`src/lib/realtime/*` +
   custom `server.js`, Phase 8).
 
 ## Directory structure
 
-Current (Phase 6):
+Current (Phase 10):
 
 ```
 /prisma
@@ -287,12 +286,12 @@ Tie-breaking (deterministic):
 
 API: `GET /api/tickets/[id]/recommendations` (AGENT/ADMIN only)
 
-## Realtime architecture (planned, Phase 8)
+## Realtime architecture (Phase 8)
 
-A custom `server.js` will wrap Next.js's request handler with a
+A custom `server.js` wraps Next.js's request handler with a
 persistent `http` server hosting Socket.IO, because App Router route
 handlers cannot host long-lived WebSocket connections. The same
-process is the natural place for the periodic SLA warning/breach scan
+process hosts the periodic SLA warning/breach scan
 (see `DECISIONS.md`, D-000 item 4), avoiding a separate cron/queue
 system. Event names, rooms, and payload shape follow spec §24 exactly
 (no comment content over sockets; only safe metadata).

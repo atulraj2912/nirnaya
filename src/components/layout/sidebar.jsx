@@ -92,6 +92,11 @@ function NavIcon({ icon }) {
 
 export default function Sidebar({ user }) {
   const pathname = usePathname();
+  const isAdmin = user?.role === "ADMIN";
+
+  const visibleSections = navSections.filter(
+    (section) => section.label !== "Administration" || isAdmin
+  );
 
   function getInitials(u) {
     if (!u) return "U";
@@ -110,7 +115,7 @@ export default function Sidebar({ user }) {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {navSections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.label} className="mb-4">
             <p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-text-muted">
               {section.label}
