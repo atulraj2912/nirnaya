@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import AppShell from "@/components/layout/app-shell";
+import TicketList from "@/components/tickets/ticket-list";
 
 export const metadata = {
   title: "My Tickets — NIRNAYA",
@@ -11,14 +13,12 @@ export default function MyTicketsPage() {
         <div>
           <h1 className="text-2xl font-bold text-text">My Tickets</h1>
           <p className="text-sm text-text-secondary">
-            Tickets you have submitted or are assigned to.
+            Tickets you have submitted.
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-sm text-text-muted">
-            My tickets view will be implemented in Phase 4.
-          </p>
-        </div>
+        <Suspense fallback={<div className="flex justify-center py-12 text-text-muted">Loading...</div>}>
+          <TicketList />
+        </Suspense>
       </div>
     </AppShell>
   );

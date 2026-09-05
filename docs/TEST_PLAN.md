@@ -89,6 +89,27 @@ Results of running these are recorded in `PROGRESS.md`.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 4 status
+
+- `tests/lifecycle.test.js` (Vitest): 27 tests covering all valid
+  transitions (OPEN→ASSIGNED, ASSIGNED→IN_PROGRESS, IN_PROGRESS→
+  WAITING_FOR_USER, IN_PROGRESS→RESOLVED, WAITING_FOR_USER→IN_PROGRESS,
+  RESOLVED→CLOSED, RESOLVED→REOPENED, REOPENED→IN_PROGRESS, same-status
+  no-op), invalid transitions (skipping ASSIGNED, terminal CLOSED,
+  unknown status), USER role restrictions (can only reopen own RESOLVED
+  tickets, cannot perform agent transitions), ADMIN permissions,
+  `getAllowedTransitions` correctness, and `isTerminal` behavior.
+- `tests/ticket-service.test.js` (Vitest): 18 tests covering ticket
+  creation with valid data and department/category validation, ticket
+  retrieval with org isolation and role-based access (USER sees own
+  only, AGENT sees all in org), status transition enforcement (valid
+  and invalid transitions, cross-org rejection), ticket assignment
+  with agent validation (same org, active status, AGENT/ADMIN role),
+  auto-transition OPEN→ASSIGNED on assignment, and listing with
+  pagination, org scoping, and USER restriction.
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 2 status
 
 - `tests/schema.test.js` (Vitest): validates Prisma schema structure

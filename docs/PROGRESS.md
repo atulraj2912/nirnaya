@@ -1,8 +1,107 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 3 — complete and verified
+## Current phase: Phase 4 — complete and verified
 
 ## Completed phases
+
+### Phase 4 — Core ticket system and lifecycle
+
+**What was implemented:**
+
+- Ticket validation schemas (`src/lib/validation/ticket.js`) using Zod:
+  - `createTicketSchema` — title, description, priority, type, source, departmentId, categoryId, tagIds
+  - `updateTicketSchema` — partial update with same fields
+  - `statusTransitionSchema` — status enum validation
+  - `assignTicketSchema` — agentId + optional reason
+  - `ticketListQuerySchema` — filters, pagination, sorting
+- Ticket lifecycle service (`src/lib/services/lifecycle.js`):
+  - Centralized transition table enforcement (D-006)
+  - `canTransition(from, to, role, options?)` — returns `{allowed, reason?}`
+  - `getAllowedTransitions(status)` — returns list of valid next statuses
+  - `isTerminal(status)` — checks if status has no outgoing transitions
+  - USER role restricted to only reopening own RESOLVED tickets
+- Ticket service (`src/lib/services/ticket-service.js`):
+  - `createTicket(data, user)` — validates department/category/tags, atomic ticket number generation, creates with tags in transaction
+  - `listTickets(query, user)` — org-scoped, role-aware (USER sees own only), filters, pagination, sorting
+  - `getTicketById(id, user)` — org-scoped, includes relations (department, category, requester, assignedAgent, tags, comments, assignmentHistory), filters internal comments for USER
+  - `updateTicket(id, data, user)` — org-scoped, validates department/category/tags, handles tag replacement in transaction
+  - `transitionStatus(id, newStatus, user)` — enforces lifecycle rules, sets server-controlled timestamps (resolvedAt, closedAt, waitingSince)
+  - `assignTicket(id, data, user)` — validates agent eligibility (same org, active, AGENT/ADMIN role), auto-transitions OPEN→ASSIGNED, records assignment history
+  - `TicketError` class with status codes
+- API routes:
+  - `POST /api/tickets` — create ticket
+  - `GET /api/tickets` — list with filters/pagination
+  - `GET /api/tickets/[id]` — detail with all relations
+  - `PATCH /api/tickets/[id]` — update (AGENT/ADMIN only)
+  - `POST /api/tickets/[id]/status` — status transition
+  - `POST /api/tickets/[id]/assign` — assign to agent (AGENT/ADMIN only)
+  - `GET /api/categories` — org-scoped categories
+  - `GET /api/departments` — org-scoped departments
+  - `GET /api/tags` — org-scoped tags
+  - `GET /api/users` — org-scoped agents for assignment
+- UI components:
+  - `src/components/ui/select.jsx` — accessible select with label/error
+  - `src/components/tickets/status-badge.jsx` — StatusBadge + PriorityBadge
+  - `src/components/tickets/ticket-list.jsx` — filterable list with search, status/priority dropdowns, pagination
+  - `src/components/tickets/ticket-form.jsx` — creation form with department/category/tag dropdowns
+  - `src/components/tickets/ticket-detail.jsx` — detail view with status actions, assignment, history, comments
+- Pages updated:
+  - `src/app/(dashboard)/tickets/page.js` — real ticket list with "New Ticket" button
+  - `src/app/(dashboard)/tickets/new/page.js` — ticket creation form
+  - `src/app/(dashboard)/tickets/[id]/page.js` — ticket detail page
+  - `src/app/(dashboard)/tickets/mine/page.js` — "My Tickets" (USER-filtered)
+- Phase 4 unit tests:
+  - `tests/lifecycle.test.js` — 27 tests: all valid transitions, invalid transitions, terminal status, USER role restrictions, ADMIN/AGENT permissions
+  - `tests/ticket-service.test.js` — 18 tests: creation, validation, org isolation, role-based access, status transitions, assignment, listing/pagination
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/validation/ticket.js` | Created |
+| `src/lib/services/lifecycle.js` | Created |
+| `src/lib/services/ticket-service.js` | Created |
+| `src/app/api/tickets/route.js` | Created |
+| `src/app/api/tickets/[id]/route.js` | Created |
+| `src/app/api/tickets/[id]/status/route.js` | Created |
+| `src/app/api/tickets/[id]/assign/route.js` | Created |
+| `src/app/api/categories/route.js` | Created |
+| `src/app/api/departments/route.js` | Created |
+| `src/app/api/tags/route.js` | Created |
+| `src/app/api/users/route.js` | Created |
+| `src/components/ui/select.jsx` | Created |
+| `src/components/tickets/status-badge.jsx` | Created |
+| `src/components/tickets/ticket-list.jsx` | Created |
+| `src/components/tickets/ticket-form.jsx` | Created |
+| `src/components/tickets/ticket-detail.jsx` | Created |
+| `src/app/(dashboard)/tickets/page.js` | Modified (real list) |
+| `src/app/(dashboard)/tickets/new/page.js` | Modified (real form) |
+| `src/app/(dashboard)/tickets/[id]/page.js` | Created (detail page) |
+| `src/app/(dashboard)/tickets/mine/page.js` | Modified (real list) |
+| `tests/lifecycle.test.js` | Created |
+| `tests/ticket-service.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 185/185 passed |
+| Production build | `npm run build` | ✅ compiled, 26 routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- Database migration not yet applied (requires network access to Supabase).
+- Seed script not yet executed (requires live database).
+- No comment creation/management UI yet (Phase 9).
+- No watcher management UI yet (Phase 9).
+- No SLA engine yet (Phase 7).
+- No AI classification/assignment yet (Phase 5/6).
+- No realtime notifications yet (Phase 8).
+- No admin CRUD UI for departments/categories/tags/users yet (Phase 10).
+
+---
 
 ### Phase 3 — Authentication and authorization
 
@@ -111,8 +210,8 @@
 
 ## Next phase
 
-**Phase 4** — Core ticket system and lifecycle (per spec §36). Awaiting
-go-ahead.
+**Phase 5** — AI-powered ticket classification and prioritization
+(per spec §17). Awaiting go-ahead.
 
 ---
 
@@ -204,8 +303,8 @@ go-ahead.
 
 ## Next phase
 
-**Phase 3** — Authentication and authorization (per spec §36). Awaiting
-go-ahead.
+**Phase 3** — Authentication and authorization (per spec §36). See Phase 3
+section above.
 
 ---
 

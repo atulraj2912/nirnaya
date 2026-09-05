@@ -39,6 +39,44 @@ KeyObject, JSON Web Key, or Uint8Array."
 
 ---
 
+## D-009 — Ticket service layer architecture (Phase 4)
+
+**Context:** Phase 4 requires centralized ticket business logic that
+enforces lifecycle rules, organization isolation, and role-based access
+across all API routes.
+
+**Decision:**
+
+1. **Single service file pattern.** All ticket CRUD, status transitions,
+   assignment, and listing logic lives in `src/lib/services/ticket-service.js`.
+   This keeps the ticket domain cohesive and avoids circular dependencies
+   between multiple service files.
+
+2. **Centralized lifecycle validator.** `src/lib/services/lifecycle.js`
+   contains the transition table from D-006 as a static lookup, with
+   `canTransition()`, `getAllowedTransitions()`, and `isTerminal()`.
+   This is the single source of truth for status transition rules.
+
+3. **TicketError class.** Custom error class with HTTP status codes
+   allows API routes to map service-layer errors to responses without
+   try/catch gymnastics.
+
+4. **Server-controlled timestamps.** Status transitions set their
+   corresponding timestamp fields (resolvedAt, closedAt, waitingSince)
+   in the service layer, not in route handlers. This prevents clients
+   from manipulating these fields.
+
+5. **Assignment auto-transition.** When a ticket in OPEN status is
+   assigned to an agent, the service automatically transitions it to
+   ASSIGNED, per D-006's requirement that ASSIGNED is mandatory before
+   IN_PROGRESS.
+
+6. **Zod validation at service boundary.** Input validation happens at
+   the service entry point (not in route handlers), ensuring consistent
+   validation regardless of how the service is called.
+
+---
+
 ## D-007 — Prisma schema and seed approach (Phase 2)
 
 **Context:** Spec §28 says "The original project used Prisma db push

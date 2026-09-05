@@ -68,7 +68,7 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 3):
+Current (Phase 4):
 
 ```
 /prisma
@@ -85,9 +85,10 @@ Current (Phase 3):
     (dashboard)/
       layout.js                # auth-gated layout (redirects to /login)
       dashboard/page.js        # dashboard with stat cards
-      tickets/page.js          # ticket list placeholder
-      tickets/new/page.js      # ticket creation placeholder
-      tickets/mine/page.js     # my tickets placeholder
+      tickets/page.js          # ticket list with filters
+      tickets/new/page.js      # ticket creation form
+      tickets/[id]/page.js     # ticket detail with actions
+      tickets/mine/page.js     # my tickets (USER-filtered)
       admin/
         users/page.js          # user management placeholder
         departments/page.js    # department mgmt placeholder
@@ -100,17 +101,31 @@ Current (Phase 3):
       /auth/login/route.js     # POST login (bcrypt + JWT + cookies)
       /auth/logout/route.js    # POST logout (clear cookies)
       /auth/me/route.js        # GET current user
+      /tickets/route.js        # POST create, GET list with filters
+      /tickets/[id]/route.js   # GET detail, PATCH update
+      /tickets/[id]/status/route.js   # POST status transition
+      /tickets/[id]/assign/route.js   # POST assign to agent
+      /categories/route.js     # GET org-scoped categories
+      /departments/route.js    # GET org-scoped departments
+      /tags/route.js           # GET org-scoped tags
+      /users/route.js          # GET org-scoped agents
   /components
     /ui/
       button.jsx               # primary/secondary/danger/ghost
       card.jsx                 # Card, CardHeader, CardContent, CardFooter
       input.jsx                # label, error state, accessible
+      select.jsx               # accessible select with label/error
       badge.jsx                # color-coded status badges
       avatar.jsx               # image or initials fallback
     /layout/
       sidebar.jsx              # nav sidebar with real user display
       header.jsx               # top bar with user info + logout
       app-shell.jsx            # sidebar + header + content
+    /tickets/
+      status-badge.jsx         # StatusBadge + PriorityBadge
+      ticket-list.jsx          # filterable ticket list with pagination
+      ticket-form.jsx          # ticket creation form
+      ticket-detail.jsx        # detail view with actions/history/comments
   /lib
     env.js                     # server-side env validation (Zod)
     /auth/
@@ -124,6 +139,11 @@ Current (Phase 3):
                                # requireAgentOrAdmin, requireSameOrganization
     /db/
       prisma.js                # Prisma client singleton
+    /validation/
+      ticket.js                # Zod schemas for ticket CRUD
+    /services/
+      lifecycle.js             # centralized transition table enforcement
+      ticket-service.js        # ticket CRUD + assignment + transitions
 /tests
   health.test.js               # Vitest — health endpoint
   env.test.js                  # Vitest — env validation schema
@@ -136,6 +156,8 @@ Current (Phase 3):
   auth.test.js                 # Vitest — session + cookie helpers
   authz.test.js                # Vitest — authorization helpers
   org-isolation.test.js        # Vitest — cross-org denial
+  lifecycle.test.js            # Vitest — ticket lifecycle transitions
+  ticket-service.test.js       # Vitest — ticket service layer
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -155,23 +177,22 @@ Planned growth (later phases), not created yet:
 ```
 /src
   /app
-    (dashboard)/tickets/[id]/page.js             [Phase 4/9]
-    /api/tickets/route.js                           [Phase 4]
-    /api/tickets/[id]/route.js                       [Phase 4]
     /api/tickets/[id]/comments/route.js               [Phase 9]
     /api/tickets/[id]/watchers/route.js                [Phase 9]
     /api/tickets/[id]/activity/route.js                 [Phase 9]
     /api/notifications/*                                 [Phase 8]
-    /api/users|departments|categories|tags/route.js       [Phase 10]
     /api/sla/route.js                                       [Phase 7]
     /api/ai/{classify,assignment-recommendation}/route.js    [Phase 5/6]
     /api/admin/**/route.js                                     [Phase 10]
   /lib
-    /validation/*.js                                                  [Phase 4+]
-    /services/*.js                                                     [Phase 4+]
-    /realtime/{socket-server,emit,rooms}.js                              [Phase 8]
-  /hooks/*.js  (React Query hooks)                                        [as needed]
-server.js  (custom Next.js + Socket.IO host)                                [Phase 8]
+    /services/
+      ai-classification-service.js                    [Phase 5]
+      ai-assignment-service.js                        [Phase 6]
+      sla-engine.js                                   [Phase 7]
+      notification-service.js                         [Phase 8]
+    /realtime/{socket-server,emit,rooms}.js            [Phase 8]
+  /hooks/*.js  (React Query hooks)                    [as needed]
+server.js  (custom Next.js + Socket.IO host)          [Phase 8]
 ```
 
 ## Multi-tenancy

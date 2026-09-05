@@ -1,0 +1,24 @@
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/authz";
+import { transitionStatus, TicketError } from "@/lib/services/ticket-service";
+
+export async function POST(request, { params }) {
+  try {
+    const { user, error } = await requireAuth();
+    if (error) {
+      return NextResponse.json({ error }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const ticket = await transitionStatus(id, body.status, user);
+
+    return NextResponse.json({ ticket });
+  } catch (error) {
+    if (error instanceof TicketError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    console.error("Transition status error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

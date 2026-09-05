@@ -1,4 +1,5 @@
 import AppShell from "@/components/layout/app-shell";
+import TicketForm from "@/components/tickets/ticket-form";
 
 export const metadata = {
   title: "Create Ticket — NIRNAYA",
@@ -14,10 +15,8 @@ export default function NewTicketPage() {
             Submit a new IT support request.
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-sm text-text-muted">
-            Ticket creation form will be implemented in Phase 4.
-          </p>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <TicketForm />
         </div>
       </div>
     </AppShell>
