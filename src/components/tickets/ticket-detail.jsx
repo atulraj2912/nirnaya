@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
 import Button from "@/components/ui/button";
 import AIClassification from "./ai-classification";
+import AgentRecommendation from "./agent-recommendation";
 
 const ALLOWED_TRANSITIONS = {
   OPEN: ["ASSIGNED"],
@@ -226,6 +227,8 @@ export default function TicketDetail({ ticketId }) {
       </div>
 
       <AIClassification ticketId={ticketId} userRole={currentUser?.role} />
+
+      <AgentRecommendation ticketId={ticketId} userRole={currentUser?.role} />
 
       {ticket.assignmentHistory?.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-6">

@@ -7,6 +7,53 @@ Newest entries at the top.
 
 ---
 
+## D-011 — Agent recommendation architecture (Phase 6)
+
+**Context:** Phase 6 requires intelligent agent assignment recommendation
+per spec §18. The spec defines specific scoring factors, weights, tie-breaking
+rules, and a confidence formula, but does not specify the exact service
+architecture or whether recommendations should persist.
+
+**Decision:**
+
+1. **Deterministic database-driven scoring.** The recommendation engine
+   computes scores entirely from database data (eligible agents, workload,
+   experience). No external AI provider is called. This satisfies the
+   spec's requirement that "fallback behavior must still be real
+   deterministic logic" and avoids dependency on AI availability for
+   assignment recommendations.
+
+2. **Service layer in `src/lib/services/agent-recommendation-service.js`.**
+   All business logic lives in the service layer, not in route handlers.
+   The service handles eligibility filtering, workload calculation,
+   experience lookup, scoring, confidence calculation, and explanation
+   generation.
+
+3. **No recommendation persistence.** Spec §18 does not require storing
+   recommendations in the database. Recommendations are computed on
+   demand from current data. This avoids stale recommendation issues
+   and keeps the schema unchanged. The existing `AIPrediction` model
+   already has `recommendedAgentId`, `assignmentScore`, and
+   `assignmentConfidence` fields that can be used if persistence is
+   later required.
+
+4. **Sequential queries.** `calculateWorkloads` and `calculateExperience`
+   run sequentially rather than via `Promise.all`. While `Promise.all`
+   would be faster in production, sequential execution ensures
+   predictable mock behavior in tests and clearer error isolation.
+
+5. **Confidence formula implemented exactly as specified (D-002).**
+   The formula uses gapRatio, base, candidate-count bonus, quality
+   bonus, and clamps to 0.50–0.98. Tests assert the mathematical
+   behavior consistent with D-002's analysis.
+
+6. **Assignment recommendation is separate from assignment.** The
+   recommendation endpoint (`GET /recommendations`) only returns ranked
+   candidates. Actual assignment uses the existing `POST /assign`
+   endpoint, which revalidates eligibility per spec §19.
+
+---
+
 ## D-010 — AI classification architecture (Phase 5)
 
 **Context:** Phase 5 requires AI-powered ticket classification with a

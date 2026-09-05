@@ -116,6 +116,25 @@ Results of running these are recorded in `PROGRESS.md`.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 6 status
+
+- `tests/recommendation-schema.test.js` (Vitest): 16 tests covering
+  factor schema (valid, negative normalized, normalized above 1),
+  agent recommendation schema (valid, invalid UUID, score above 100,
+  confidence below 0.5, confidence above 0.98, null department, null
+  confidence), recommendation response schema (valid, negative count),
+  `validateRecommendationOutput` (valid output, invalid output), and
+  constants (workload statuses, no CLOSED/RESOLVED).
+- `tests/agent-recommendation-service.test.js` (Vitest): 18 tests covering
+  valid ticket with eligible agents, non-existent ticket, cross-org ticket,
+  no eligible agents, AGENT-only role filtering, department filtering,
+  workload calculation, zero workload, scoring and ranking, same-department
+  advantage, lower-workload advantage, score bounds 0–100, factor structure,
+  explanation generation, confidence bounds 0.50–0.98, deterministic tie-breaking,
+  and graceful failure handling.
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 4 status
 
 - `tests/lifecycle.test.js` (Vitest): 27 tests covering all valid

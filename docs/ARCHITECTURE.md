@@ -67,7 +67,7 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 5):
+Current (Phase 6):
 
 ```
 /prisma
@@ -86,7 +86,7 @@ Current (Phase 5):
       dashboard/page.js        # dashboard with stat cards
       tickets/page.js          # ticket list with filters
       tickets/new/page.js      # ticket creation form
-      tickets/[id]/page.js     # ticket detail with AI classification
+      tickets/[id]/page.js     # ticket detail with AI classification + recommendations
       tickets/mine/page.js     # my tickets (USER-filtered)
       admin/
         users/page.js          # user management placeholder
@@ -106,6 +106,7 @@ Current (Phase 5):
       /tickets/[id]/assign/route.js   # POST assign to agent
       /tickets/[id]/classify/route.js # POST trigger AI classification
       /tickets/[id]/ai/route.js       # GET AI predictions
+      /tickets/[id]/recommendations/route.js # GET AI agent recommendations
       /categories/route.js     # GET org-scoped categories
       /departments/route.js    # GET org-scoped departments
       /tags/route.js           # GET org-scoped tags
@@ -126,8 +127,9 @@ Current (Phase 5):
       status-badge.jsx         # StatusBadge + PriorityBadge
       ticket-list.jsx          # filterable ticket list with pagination
       ticket-form.jsx          # ticket creation form
-      ticket-detail.jsx        # detail view with AI classification panel
+      ticket-detail.jsx        # detail view with AI classification + recommendations
       ai-classification.jsx    # AI classification panel (predictions, trigger)
+      agent-recommendation.jsx # AI agent recommendation panel (ranked agents)
   /lib
     env.js                     # server-side env validation (Zod)
     /auth/
@@ -147,10 +149,12 @@ Current (Phase 5):
       lifecycle.js             # centralized transition table enforcement
       ticket-service.js        # ticket CRUD + assignment + transitions
       ai-classification-service.js  # AI classification orchestration
+      agent-recommendation-service.js # AI agent recommendation (scoring, eligibility)
     /ai/
       provider.js              # BaseProvider class, provider registry
       validation.js            # Zod schemas for AI input/output
       classifier.js            # classifier orchestrator (provider resolution, timeout)
+      recommendation-schema.js # Zod schemas for recommendation output validation
       /providers/
         mock.js                # deterministic keyword-based mock provider
 /tests
@@ -171,6 +175,8 @@ Current (Phase 5):
   ai-provider.test.js          # Vitest — mock provider
   ai-classifier.test.js        # Vitest — classifier orchestrator
   ai-classification-service.test.js  # Vitest — classification service
+  recommendation-schema.test.js      # Vitest — recommendation validation schemas
+  agent-recommendation-service.test.js # Vitest — agent recommendation service
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -195,11 +201,9 @@ Planned growth (later phases), not created yet:
     /api/tickets/[id]/activity/route.js                 [Phase 9]
     /api/notifications/*                                 [Phase 8]
     /api/sla/route.js                                       [Phase 7]
-    /api/ai/{classify,assignment-recommendation}/route.js    [Phase 5/6]
     /api/admin/**/route.js                                     [Phase 10]
   /lib
     /services/
-      ai-assignment-service.js                        [Phase 6]
       sla-engine.js                                   [Phase 7]
       notification-service.js                         [Phase 8]
     /realtime/{socket-server,emit,rooms}.js            [Phase 8]
@@ -226,6 +230,7 @@ Provider architecture (`src/lib/ai/`):
 provider.js          # BaseProvider class, provider registry
 validation.js        # Zod schemas for AI input/output
 classifier.js        # orchestrator: provider resolution, timeout, validation
+recommendation-schema.js # Zod schemas for recommendation output
 providers/
   mock.js            # deterministic keyword-based provider
 ```
@@ -241,6 +246,44 @@ The concrete provider call is an implementation detail behind the
 `classify()` function; route handlers and UI only depend on the
 return shape (`categoryName`, `predictedPriority`, `departmentName`,
 `confidence`, `explanation`, `suggestedNextSteps`).
+
+## Agent recommendation engine (Phase 6)
+
+Per spec §18: "Recommendation is NOT the same thing as assignment.
+AI recommends. Authorized human accepts/assigns."
+
+The recommendation engine (`src/lib/services/agent-recommendation-service.js`)
+computes deterministic, explainable agent recommendations from database
+data. It does not call an external AI provider.
+
+Eligibility rules:
+- role = AGENT, same organization, ACTIVE status
+- same department when ticket department is known
+- exclude ADMIN, USER, inactive, cross-org agents
+
+Scoring factors (spec §18 weights):
+- Department Match: 30%
+- Category Experience: 30% (diminishing returns)
+- Workload: 25% (lower is better)
+- Priority Readiness: 10% (HIGH/CRITICAL tickets)
+- Historical Experience: 5% (diminishing returns)
+
+Confidence formula (spec §18, D-002):
+```
+gapRatio = (topScore - runnerUpScore) / max(topScore, 1)
+base = 0.35 + gapRatio * 0.50
++ candidate-count bonus (up to 0.08)
++ quality bonus (up to 0.05)
+clamp to 0.50 – 0.98
+```
+
+Tie-breaking (deterministic):
+1. Category experience
+2. Lower workload
+3. Lower high/critical workload
+4. Stable agent ID
+
+API: `GET /api/tickets/[id]/recommendations` (AGENT/ADMIN only)
 
 ## Realtime architecture (planned, Phase 8)
 
@@ -262,3 +305,11 @@ system. Event names, rooms, and payload shape follow spec §24 exactly
 5. Emit the realtime event (failure here must not roll back the
    mutation — spec §24).
 6. Return a normalized response to the route handler.
+
+## Data flow for a recommendation (Phase 6)
+
+1. Route handler: authenticate, authorize AGENT/ADMIN, parse ticket ID.
+2. Service layer: verify ticket org, find eligible agents, calculate
+   workload/experience, score agents, generate confidence, build
+   ranked output with explanations.
+3. Return deterministic response — no external AI call, no persistence.

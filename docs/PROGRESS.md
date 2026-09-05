@@ -1,8 +1,74 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 5 — complete and verified
+## Current phase: Phase 6 — complete and verified
 
 ## Completed phases
+
+### Phase 6 — Intelligent agent assignment recommendation
+
+**What was implemented:**
+
+- Recommendation validation schemas (`src/lib/ai/recommendation-schema.js`):
+  - `factorSchema` — validates individual scoring factors (name, normalized, weight, contribution)
+  - `agentRecommendationSchema` — validates a single agent recommendation (agentId, score, confidence, workload, experience, explanation, factors, rank, timestamp)
+  - `recommendationResponseSchema` — validates the full recommendation response
+  - `validateRecommendationOutput()` — validates engine output before returning
+  - Workload statuses constant (ASSIGNED, IN_PROGRESS, WAITING_FOR_USER, REOPENED)
+- Agent recommendation service (`src/lib/services/agent-recommendation-service.js`):
+  - `getRecommendations(ticketId, user)` — full recommendation flow with org isolation
+  - Eligible-agent filtering: role=AGENT, same org, ACTIVE, same department when known (per spec §18)
+  - Deterministic scoring with spec §18 weights: Department 30%, Category Experience 30%, Workload 25%, Priority Readiness 10%, Historical Experience 5%
+  - Workload calculation using Prisma groupBy (avoids N+1 queries) — counts ASSIGNED, IN_PROGRESS, WAITING_FOR_USER, REOPENED
+  - Category experience with diminishing returns (logarithmic scaling)
+  - Historical experience across all categories
+  - Priority readiness for HIGH/CRITICAL tickets
+  - Deterministic tie-breaking: score → category experience → workload → high/critical workload → stable agent ID
+  - Confidence formula per spec §18 and D-002: gapRatio, base, candidate-count bonus, quality bonus, bounded 0.50–0.98
+  - Human-readable explanations for each recommendation
+  - Graceful failure handling — recommendation errors don't break ticket functionality
+- API route:
+  - `GET /api/tickets/[id]/recommendations` — AGENT/ADMIN only, org-scoped, returns ranked recommendations
+- UI components:
+  - `src/components/tickets/agent-recommendation.jsx` — AI Agent Recommendation panel
+    - Shows top 3 recommendations with score bar, confidence badge, workload/experience metrics
+    - Scoring breakdown (expandable for top recommendation)
+    - Refresh button for recalculation
+    - Role-gated (AGENT/ADMIN only)
+    - Loading, empty, and error states
+  - Updated `ticket-detail.jsx` to include recommendation panel
+- Phase 6 unit tests:
+  - `tests/recommendation-schema.test.js` — 16 tests: factor schema, recommendation schema, response schema, validation function, constants
+  - `tests/agent-recommendation-service.test.js` — 18 tests: eligibility, workload, scoring, ranking, confidence, tie-breaking, org isolation, failure handling
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/ai/recommendation-schema.js` | Created |
+| `src/lib/services/agent-recommendation-service.js` | Created |
+| `src/app/api/tickets/[id]/recommendations/route.js` | Created |
+| `src/components/tickets/agent-recommendation.jsx` | Created |
+| `src/components/tickets/ticket-detail.jsx` | Modified (added AgentRecommendation import and panel) |
+| `tests/recommendation-schema.test.js` | Created |
+| `tests/agent-recommendation-service.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 278/278 passed |
+| Production build | `npm run build` | ✅ compiled, 29 routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- No real AI provider integrated yet (only mock provider for classification). OpenAI or other provider to be configured via AI_PROVIDER env var.
+- AIPrediction model does not store provider/model metadata — this is a schema limitation noted in D-010.
+- Recommendation does not persist to database (computed on demand per spec §18).
+- No SLA engine yet (Phase 7).
+- No realtime notifications yet (Phase 8).
+- No admin CRUD UI for departments/categories/tags/users yet (Phase 10).
 
 ### Phase 5 — AI ticket classification
 
