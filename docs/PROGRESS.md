@@ -1,8 +1,104 @@
 # NIRNAYA — Progress
 
-## Current phase: Phase 4 — complete and verified
+## Current phase: Phase 5 — complete and verified
 
 ## Completed phases
+
+### Phase 5 — AI ticket classification
+
+**What was implemented:**
+
+- AI provider abstraction (`src/lib/ai/provider.js`):
+  - `BaseProvider` class with `classify()` method
+  - Provider registry (`registerProvider`, `getProvider`)
+  - Pluggable architecture for swapping providers
+- AI validation schemas (`src/lib/ai/validation.js`):
+  - `classificationInputSchema` — validates ticket context before provider
+  - `rawClassificationOutputSchema` — validates provider output with Zod
+  - `validateClassificationOutput()` — normalizes and validates raw output
+  - Handles NaN, Infinity, empty strings, oversized text
+  - Validates category names against 8 known categories (per spec §17)
+  - Validates priorities against 4 known levels
+  - Bounded confidence scores (0.0–1.0)
+- Mock AI provider (`src/lib/ai/providers/mock.js`):
+  - Deterministic keyword-based classification (per spec §17)
+  - Maps ticket content to NETWORK, HARDWARE, SOFTWARE, EMAIL, ACCOUNT, DATABASE, SECURITY, INFRASTRUCTURE
+  - Detects priority from keywords (CRITICAL, HIGH, LOW, MEDIUM default)
+  - Calculates confidence based on keyword matches (0.45–0.85 range)
+  - Generates explanations and suggested next steps
+  - Registered as "mock" provider, auto-selected when no AI_PROVIDER configured
+- Classifier orchestrator (`src/lib/ai/classifier.js`):
+  - Resolves provider from AI_PROVIDER env var (falls back to "mock")
+  - Input validation via Zod before provider call
+  - Configurable timeout (default 10s) with provider race
+  - Output validation and normalization
+- AI classification service (`src/lib/services/ai-classification-service.js`):
+  - `classifyTicket(ticketId, user)` — full classification flow with org isolation
+  - Resolves predicted category/department to real database IDs (same org)
+  - Persists prediction to AIPrediction model
+  - `getPredictions(ticketId, user)` — org-scoped prediction list
+  - `getLatestPrediction(ticketId, user)` — most recent prediction
+  - `applyPrediction(ticketId, predictionId, user)` — applies prediction to ticket fields
+  - Graceful failure handling — classification errors don't propagate
+- API routes:
+  - `POST /api/tickets/[id]/classify` — trigger classification (AGENT/ADMIN only)
+  - `GET /api/tickets/[id]/ai` — get predictions for a ticket
+- Auto-classification on ticket creation:
+  - `POST /api/tickets` now triggers async classification after creation
+  - Fire-and-forget pattern — ticket creation never waits on AI
+  - Classification failure logged server-side, doesn't affect user response
+- UI components:
+  - `src/components/tickets/ai-classification.jsx` — AI classification panel
+    - Shows latest prediction: category, priority, department, confidence
+    - Displays explanation and suggested next steps
+    - "Run Classification" button for AGENT/ADMIN
+    - History of earlier predictions (collapsible)
+    - Loading and error states
+- Updated ticket detail page to include AI classification panel
+- Phase 5 unit tests:
+  - `tests/ai-validation.test.js` — 20 tests: input/output schemas, NaN/Infinity handling, truncation, category validation, confidence bounds
+  - `tests/ai-provider.test.js` — 17 tests: mock provider for all 8 categories, priority detection, confidence calculation, edge cases
+  - `tests/ai-classifier.test.js` — 6 tests: classifier integration, provider resolution, timeout, input validation
+  - `tests/ai-classification-service.test.js` — 16 tests: prediction creation, org isolation, category resolution, apply prediction, stale ID handling, failure handling
+
+**Files changed/created:**
+
+| File | Action |
+|---|---|
+| `src/lib/ai/provider.js` | Created |
+| `src/lib/ai/validation.js` | Created |
+| `src/lib/ai/classifier.js` | Created |
+| `src/lib/ai/providers/mock.js` | Created |
+| `src/lib/services/ai-classification-service.js` | Created |
+| `src/app/api/tickets/route.js` | Modified (added POST handler + auto-classification) |
+| `src/app/api/tickets/[id]/classify/route.js` | Created |
+| `src/app/api/tickets/[id]/ai/route.js` | Created |
+| `src/components/tickets/ai-classification.jsx` | Created |
+| `src/components/tickets/ticket-detail.jsx` | Modified (added AI panel, current user fetch) |
+| `tests/ai-validation.test.js` | Created |
+| `tests/ai-provider.test.js` | Created |
+| `tests/ai-classifier.test.js` | Created |
+| `tests/ai-classification-service.test.js` | Created |
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma schema validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npm run test` (Vitest) | ✅ 244/244 passed |
+| Production build | `npm run build` | ✅ compiled, 28 routes generated |
+
+**Known limitations / not yet done (by design — later phases):**
+
+- No real AI provider integrated yet (only mock provider). OpenAI or other provider to be configured via AI_PROVIDER env var.
+- AIPrediction model does not store provider/model metadata — this is a schema limitation noted in D-010.
+- No AI assignment recommendation yet (Phase 6).
+- No SLA engine yet (Phase 7).
+- No realtime notifications yet (Phase 8).
+- No admin CRUD UI for departments/categories/tags/users yet (Phase 10).
+
+---
 
 ### Phase 4 — Core ticket system and lifecycle
 
@@ -210,8 +306,8 @@
 
 ## Next phase
 
-**Phase 5** — AI-powered ticket classification and prioritization
-(per spec §17). Awaiting go-ahead.
+**Phase 6** — Intelligent agent assignment recommendation
+(per spec §18). Awaiting go-ahead.
 
 ---
 

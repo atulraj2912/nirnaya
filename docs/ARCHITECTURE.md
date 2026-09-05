@@ -55,11 +55,10 @@ Prisma Client  ──►  Supabase PostgreSQL
   14 models and 9 enums; `src/lib/db/prisma.js` — singleton client
   with global cache) — schema and connection only; no query logic
   beyond thin data-access use inside services.
-- **validation** (planned: `src/lib/validation/*`, Zod schemas, from
-  Phase 4 onward).
-- **AI services** (planned: `src/lib/services/ai-classification-service.js`,
-  `ai-assignment-service.js`, Phase 5/6) — provider-agnostic interface;
-  see "AI provider abstraction" below.
+- **validation** (`src/lib/validation/*`, Zod schemas, from Phase 4 onward).
+- **AI services** (`src/lib/ai/*`, `src/lib/services/ai-classification-service.js`,
+  Phase 5) — provider-agnostic classification interface with
+  mock provider; see "AI provider abstraction" below.
 - **SLA engine** (planned: `src/lib/services/sla-engine.js`, Phase 7).
 - **notifications** (planned: `src/lib/services/notification-service.js`,
   Phase 8).
@@ -68,7 +67,7 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 4):
+Current (Phase 5):
 
 ```
 /prisma
@@ -87,7 +86,7 @@ Current (Phase 4):
       dashboard/page.js        # dashboard with stat cards
       tickets/page.js          # ticket list with filters
       tickets/new/page.js      # ticket creation form
-      tickets/[id]/page.js     # ticket detail with actions
+      tickets/[id]/page.js     # ticket detail with AI classification
       tickets/mine/page.js     # my tickets (USER-filtered)
       admin/
         users/page.js          # user management placeholder
@@ -101,10 +100,12 @@ Current (Phase 4):
       /auth/login/route.js     # POST login (bcrypt + JWT + cookies)
       /auth/logout/route.js    # POST logout (clear cookies)
       /auth/me/route.js        # GET current user
-      /tickets/route.js        # POST create, GET list with filters
+      /tickets/route.js        # POST create (with auto-classification), GET list
       /tickets/[id]/route.js   # GET detail, PATCH update
       /tickets/[id]/status/route.js   # POST status transition
       /tickets/[id]/assign/route.js   # POST assign to agent
+      /tickets/[id]/classify/route.js # POST trigger AI classification
+      /tickets/[id]/ai/route.js       # GET AI predictions
       /categories/route.js     # GET org-scoped categories
       /departments/route.js    # GET org-scoped departments
       /tags/route.js           # GET org-scoped tags
@@ -125,7 +126,8 @@ Current (Phase 4):
       status-badge.jsx         # StatusBadge + PriorityBadge
       ticket-list.jsx          # filterable ticket list with pagination
       ticket-form.jsx          # ticket creation form
-      ticket-detail.jsx        # detail view with actions/history/comments
+      ticket-detail.jsx        # detail view with AI classification panel
+      ai-classification.jsx    # AI classification panel (predictions, trigger)
   /lib
     env.js                     # server-side env validation (Zod)
     /auth/
@@ -144,6 +146,13 @@ Current (Phase 4):
     /services/
       lifecycle.js             # centralized transition table enforcement
       ticket-service.js        # ticket CRUD + assignment + transitions
+      ai-classification-service.js  # AI classification orchestration
+    /ai/
+      provider.js              # BaseProvider class, provider registry
+      validation.js            # Zod schemas for AI input/output
+      classifier.js            # classifier orchestrator (provider resolution, timeout)
+      /providers/
+        mock.js                # deterministic keyword-based mock provider
 /tests
   health.test.js               # Vitest — health endpoint
   env.test.js                  # Vitest — env validation schema
@@ -158,6 +167,10 @@ Current (Phase 4):
   org-isolation.test.js        # Vitest — cross-org denial
   lifecycle.test.js            # Vitest — ticket lifecycle transitions
   ticket-service.test.js       # Vitest — ticket service layer
+  ai-validation.test.js        # Vitest — AI validation schemas
+  ai-provider.test.js          # Vitest — mock provider
+  ai-classifier.test.js        # Vitest — classifier orchestrator
+  ai-classification-service.test.js  # Vitest — classification service
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -186,7 +199,6 @@ Planned growth (later phases), not created yet:
     /api/admin/**/route.js                                     [Phase 10]
   /lib
     /services/
-      ai-classification-service.js                    [Phase 5]
       ai-assignment-service.js                        [Phase 6]
       sla-engine.js                                   [Phase 7]
       notification-service.js                         [Phase 8]
@@ -202,20 +214,33 @@ every query in the service layer must filter by it (spec §5, §26).
 This is a cross-cutting rule enforced at the service layer, not
 something delegated to individual route handlers to remember.
 
-## AI provider abstraction (planned, Phase 5/6)
+## AI provider abstraction (Phase 5)
 
-No AI provider is selected yet (see `DECISIONS.md`, D-001). The
-service layer will expose a stable interface, e.g.:
+No real AI provider is selected yet (see `DECISIONS.md`, D-001). The
+mock provider provides deterministic keyword-based classification for
+development and testing.
 
-```js
-// src/lib/services/ai-classification-service.js (shape, not yet implemented)
-export async function classifyTicket({ title, description, context }) { ... }
+Provider architecture (`src/lib/ai/`):
+
+```
+provider.js          # BaseProvider class, provider registry
+validation.js        # Zod schemas for AI input/output
+classifier.js        # orchestrator: provider resolution, timeout, validation
+providers/
+  mock.js            # deterministic keyword-based provider
 ```
 
-The concrete provider call (or the deterministic local fallback) is an
-implementation detail behind this function; route handlers and UI only
-depend on the function's return shape (`category`, `priority`,
-`department`, `confidence`, `explanation`, `suggestedNextSteps`).
+Adding a new provider:
+
+1. Create `src/lib/ai/providers/<name>.js` extending `BaseProvider`
+2. Implement `classify(input, context)` returning `ClassificationOutput`
+3. Register with `registerProvider("<name>", ProviderClass)`
+4. Set `AI_PROVIDER=<name>` in environment
+
+The concrete provider call is an implementation detail behind the
+`classify()` function; route handlers and UI only depend on the
+return shape (`categoryName`, `predictedPriority`, `departmentName`,
+`confidence`, `explanation`, `suggestedNextSteps`).
 
 ## Realtime architecture (planned, Phase 8)
 
@@ -227,12 +252,13 @@ process is the natural place for the periodic SLA warning/breach scan
 system. Event names, rooms, and payload shape follow spec §24 exactly
 (no comment content over sockets; only safe metadata).
 
-## Data flow for a mutation (planned pattern, from Phase 4 onward)
+## Data flow for a mutation (current pattern)
 
 1. Route handler: parse + Zod-validate input, call `authz` helpers.
 2. Service layer: enforce business rules (lifecycle transitions, SLA
    rules, organization scoping), perform the Prisma mutation.
-3. Persist any resulting notification.
-4. Emit the realtime event (failure here must not roll back the
+3. AI classification: triggered async after ticket creation (fire-and-forget).
+4. Persist any resulting notification.
+5. Emit the realtime event (failure here must not roll back the
    mutation — spec §24).
-5. Return a normalized response to the route handler.
+6. Return a normalized response to the route handler.

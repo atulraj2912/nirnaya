@@ -7,6 +7,51 @@ Newest entries at the top.
 
 ---
 
+## D-010 — AI classification architecture (Phase 5)
+
+**Context:** Phase 5 requires AI-powered ticket classification with a
+provider-agnostic abstraction. The Master Spec §17 specifies the
+classification input/output but does not specify the exact architecture.
+
+**Decision:**
+
+1. **Provider abstraction in `src/lib/ai/`.** The `BaseProvider` class
+   defines the `classify()` interface. Providers register themselves via
+   `registerProvider()` and are resolved by name from the `AI_PROVIDER`
+   env var. This allows swapping providers without changing route handlers
+   or UI.
+
+2. **Deterministic mock provider.** The mock provider uses keyword
+   analysis to classify tickets into the 8 known categories. It is not
+   a random stub — it produces real deterministic output based on
+   ticket content, per spec §17's requirement that "fallback behavior
+   must still be real deterministic logic."
+
+3. **Non-blocking auto-classification.** Ticket creation triggers
+   classification via fire-and-forget (`.catch()` on the promise).
+   Classification failure never prevents ticket creation from succeeding.
+   This follows the principle that AI is best-effort and should not
+   degrade core functionality.
+
+4. **Zod validation at boundaries.** Input is validated before sending
+   to provider. Output is validated and normalized after receiving from
+   provider. NaN, Infinity, empty strings, and oversized text are
+   handled safely.
+
+5. **AIPrediction model used as-is.** The existing schema has all
+   required fields (predictedCategoryId, predictedPriority,
+   predictedDepartmentId, confidence, explanation, suggestedNextSteps).
+   The model does not have provider/model metadata fields — this is
+   acceptable for Phase 5 since the spec does not explicitly require
+   storing provider identity in the prediction record. If needed later,
+   the schema can be extended.
+
+6. **Manual classification via API.** AGENT/ADMIN can trigger
+   classification via `POST /api/tickets/[id]/classify`. This supports
+   re-classification and manual workflows.
+
+---
+
 ## D-008 — jose 6.x key format and test environment (Phase 3)
 
 **Context:** jose 6.x enforces strict key type checking via

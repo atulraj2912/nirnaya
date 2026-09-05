@@ -89,6 +89,33 @@ Results of running these are recorded in `PROGRESS.md`.
 
 Results of running these are recorded in `PROGRESS.md`.
 
+## Phase 5 status
+
+- `tests/ai-validation.test.js` (Vitest): 20 tests covering
+  classification input schema (valid/minimal/empty fields), raw output
+  schema (all fields, null values, case normalization, invalid category,
+  invalid priority, confidence bounds, NaN/Infinity handling, text
+  truncation, empty string conversion), `validateClassificationOutput`
+  (valid output, invalid output, provider name in error), and constants
+  (all 8 categories, all 4 priorities).
+- `tests/ai-provider.test.js` (Vitest): 17 tests covering mock provider
+  for all 8 categories (NETWORK, HARDWARE, SOFTWARE, EMAIL, ACCOUNT,
+  DATABASE, SECURITY, INFRASTRUCTURE), unrecognizable content returns
+  null category, priority detection (CRITICAL, HIGH, LOW, MEDIUM default),
+  suggested next steps generation, null department, model identifier.
+- `tests/ai-classifier.test.js` (Vitest): 6 tests covering classifier
+  integration (validated output, category classification, minimal input,
+  input validation, timeout mechanism, provider name retrieval).
+- `tests/ai-classification-service.test.js` (Vitest): 15 tests covering
+  prediction creation for valid tickets, non-existent ticket handling,
+  cross-org ticket rejection, predicted category resolution to database
+  IDs, null category when not found in org, provider failure graceful
+  handling, predictions retrieval with org scoping, cross-org prediction
+  denial, latest prediction selection, prediction application to ticket,
+  and prediction/ticket mismatch detection.
+
+Results of running these are recorded in `PROGRESS.md`.
+
 ## Phase 4 status
 
 - `tests/lifecycle.test.js` (Vitest): 27 tests covering all valid

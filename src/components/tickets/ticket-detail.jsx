@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
 import Button from "@/components/ui/button";
+import AIClassification from "./ai-classification";
 
 const ALLOWED_TRANSITIONS = {
   OPEN: ["ASSIGNED"],
@@ -32,6 +33,7 @@ export default function TicketDetail({ ticketId }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [agents, setAgents] = useState([]);
   const [assignAgentId, setAssignAgentId] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     async function fetchTicket() {
@@ -56,6 +58,17 @@ export default function TicketDetail({ ticketId }) {
       }
     }
     fetchAgents();
+  }, []);
+
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data.user);
+      }
+    }
+    fetchCurrentUser();
   }, []);
 
   async function handleStatusChange(newStatus) {
@@ -211,6 +224,8 @@ export default function TicketDetail({ ticketId }) {
           </Button>
         </div>
       </div>
+
+      <AIClassification ticketId={ticketId} userRole={currentUser?.role} />
 
       {ticket.assignmentHistory?.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-6">
