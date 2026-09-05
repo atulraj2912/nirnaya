@@ -51,10 +51,10 @@ Prisma Client  ──►  Supabase PostgreSQL
 - **environment validation** (`src/lib/env.js`, Phase 1) — server-side
   only; Zod-validated env vars with fail-fast behavior. Must not be
   imported from client components.
-- **database/Prisma** (`prisma/schema.prisma`, planned
-  `src/lib/db/prisma.js` singleton client, Phase 2) — schema and
-  connection only; no query logic beyond thin data-access use inside
-  services.
+- **database/Prisma** (`prisma/schema.prisma` — complete V1 schema with
+  14 models and 9 enums; `src/lib/db/prisma.js` — singleton client
+  with global cache) — schema and connection only; no query logic
+  beyond thin data-access use inside services.
 - **validation** (planned: `src/lib/validation/*`, Zod schemas, from
   Phase 4 onward).
 - **AI services** (planned: `src/lib/services/ai-classification-service.js`,
@@ -68,11 +68,12 @@ Prisma Client  ──►  Supabase PostgreSQL
 
 ## Directory structure
 
-Current (Phase 1):
+Current (Phase 2):
 
 ```
 /prisma
-  schema.prisma               # datasource + generator only (no models yet)
+  schema.prisma               # complete V1 domain schema (14 models, 9 enums)
+  seed.js                     # idempotent seed script
 /src
   /app
     layout.js                  # root HTML layout
@@ -108,10 +109,15 @@ Current (Phase 1):
       app-shell.jsx            # sidebar + header + content
   /lib
     env.js                     # server-side env validation (Zod)
+    /db
+      prisma.js                # Prisma client singleton
 /tests
   health.test.js               # Vitest — health endpoint
   env.test.js                  # Vitest — env validation schema
   components.test.jsx          # Vitest — UI components
+  schema.test.js               # Vitest — Prisma schema structure
+  prisma-client.test.js        # Vitest — Prisma client singleton
+  seed.test.js                 # Vitest — seed script structure
 /e2e
   smoke.spec.js                # Playwright — login, dashboard, redirect
 /docs
@@ -146,7 +152,6 @@ Planned growth (later phases), not created yet:
   /lib
     /auth/{jwt,password,cookies,session}.js                       [Phase 3]
     /authz/{requireAuth,requireRole,...}.js                         [Phase 3]
-    /db/prisma.js                                                    [Phase 2]
     /validation/*.js                                                  [Phase 4+]
     /services/*.js                                                     [Phase 4+]
     /realtime/{socket-server,emit,rooms}.js                              [Phase 8]

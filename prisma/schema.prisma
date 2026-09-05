@@ -1,9 +1,8 @@
 // NIRNAYA — Prisma schema
 //
-// Phase 0 scope: toolchain configuration only (datasource + generator).
-// Domain models (Organization, User, Ticket, etc.) are introduced in
-// Phase 2 ("Prisma schema, database connection, seed infrastructure")
-// per docs/PROGRESS.md and the Master Technical Specification.
+// Phase 2: Complete V1 domain models, enums, indexes, and constraints.
+// All models are organization-scoped per spec §5.
+// See docs/NIRNAYA_MASTER_SPEC.md for authoritative requirements.
 
 generator client {
   provider = "prisma-client-js"
@@ -13,4 +12,417 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketType {
+  INCIDENT
+  SERVICE_REQUEST
+}
+
+enum TicketSource {
+  WEB
+  EMAIL
+  API
+}
+
+enum TicketStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  WAITING_FOR_USER
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum CommentVisibility {
+  PUBLIC
+  INTERNAL
+}
+
+enum SLAStatus {
+  ON_TRACK
+  WARNING
+  BREACHED
+  PAUSED
+  COMPLETED
+}
+
+enum NotificationType {
+  TICKET_CREATED
+  TICKET_ASSIGNED
+  TICKET_REASSIGNED
+  TICKET_STATUS_CHANGED
+  TICKET_PRIORITY_CHANGED
+  COMMENT_ADDED
+  WATCHER_ADDED
+  WATCHER_REMOVED
+  SLA_WARNING
+  SLA_BREACHED
+  ASSIGNMENT_ACCEPTED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model Organization {
+  id                   String   @id @default(uuid())
+  name                 String   @unique
+  slug                 String   @unique
+  description          String?
+  logoUrl              String?
+  businessHoursStart   String?  // e.g. "09:00"
+  businessHoursEnd     String?  // e.g. "17:00"
+  timezone             String   @default("UTC")
+  ticketCounter        Int      @default(0) // atomic counter for ticket numbering
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  departments          Department[]
+  users                User[]
+  tickets              Ticket[]
+  categories           Category[]
+  tags                 Tag[]
+  slaConfigurations    SLAConfiguration[]
+  savedReplies         SavedReply[]
+  notifications        Notification[]
+
+  @@map("organizations")
+}
+
+model Department {
+  id             String   @id @default(uuid())
+  name           String
+  code           String
+  managerId      String?
+  organizationId String
+  createdById    String
+  updatedById    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  manager        User?        @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  createdBy      User         @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy      User?        @relation("DepartmentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  users          User[]
+  tickets        Ticket[]
+  aiPredictions  AIPrediction[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("departments")
+}
+
+model User {
+  id             String     @id @default(uuid())
+  username       String
+  email          String
+  passwordHash   String
+  employeeId     String?
+  role           Role       @default(USER)
+  status         UserStatus @default(ACTIVE)
+  avatarUrl      String?    @db.Text
+  designation    String?
+  organizationId String
+  departmentId   String
+  createdById    String?
+  updatedById    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  organization          Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department            Department            @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  createdBy             User?                 @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy             User?                 @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdUsers          User[]                @relation("UserCreatedBy")
+  updatedUsers          User[]                @relation("UserUpdatedBy")
+  managedDepartments    Department[]          @relation("DepartmentManager")
+  createdDepartments    Department[]          @relation("DepartmentCreatedBy")
+  updatedDepartments    Department[]          @relation("DepartmentUpdatedBy")
+  requestedTickets      Ticket[]              @relation("TicketRequester")
+  assignedTickets       Ticket[]              @relation("TicketAssignedAgent")
+  createdTickets        Ticket[]              @relation("TicketCreatedBy")
+  updatedTickets        Ticket[]              @relation("TicketUpdatedBy")
+  comments              Comment[]
+  notifications         Notification[]
+  watchers              Watcher[]
+  assignmentHistory     TicketAssignmentHistory[] @relation("AssignmentAssignedTo")
+  assignedByHistory     TicketAssignmentHistory[] @relation("AssignmentAssignedBy")
+  aiPredictions         AIPrediction[]
+  createdSavedReplies   SavedReply[]          @relation("SavedReplyCreatedBy")
+  updatedSavedReplies   SavedReply[]          @relation("SavedReplyUpdatedBy")
+
+  @@unique([organizationId, username])
+  @@unique([organizationId, email])
+  @@unique([organizationId, employeeId])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model Ticket {
+  id                String       @id @default(uuid())
+  ticketNumber      String       @unique // NIR-YYYY-000001 format
+  title             String       @db.VarChar(200)
+  description       String       @db.Text
+  status            TicketStatus @default(OPEN)
+  priority          TicketPriority @default(MEDIUM)
+  type              TicketType   @default(INCIDENT)
+  source            TicketSource @default(WEB)
+  organizationId    String
+  departmentId      String
+  categoryId        String?
+  requesterId       String
+  assignedAgentId   String?
+  createdById       String?
+  updatedById       String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // SLA tracking fields (server-controlled, spec §21)
+  responseSlaStatus    SLAStatus?
+  resolutionSlaStatus  SLAStatus?
+  responseDueAt        DateTime?
+  resolutionDueAt      DateTime?
+  firstRespondedAt     DateTime?
+  waitingSince         DateTime?
+  resolvedAt           DateTime?
+  closedAt             DateTime?
+
+  // Relations
+  organization       Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department         Department            @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  category           Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  requester          User                  @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  assignedAgent      User?                 @relation("TicketAssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  createdBy          User?                 @relation("TicketCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy          User?                 @relation("TicketUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  comments           Comment[]
+  ticketTags         TicketTag[]
+  watchers           Watcher[]
+  assignmentHistory  TicketAssignmentHistory[]
+  aiPredictions      AIPrediction[]
+  notifications      Notification[]
+
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([categoryId])
+  @@index([requesterId])
+  @@index([assignedAgentId])
+  @@index([status])
+  @@index([priority])
+  @@map("tickets")
+}
+
+model Category {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tickets        Ticket[]
+  aiPredictions  AIPrediction[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("categories")
+}
+
+model Tag {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ticketTags     TicketTag[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("tags")
+}
+
+model TicketTag {
+  ticketId String
+  tagId    String
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, tagId])
+  @@map("ticket_tags")
+}
+
+model Comment {
+  id         String            @id @default(uuid())
+  content    String            @db.Text
+  visibility CommentVisibility @default(PUBLIC)
+  ticketId   String
+  authorId   String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  // Relations
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Notification {
+  id             String           @id @default(uuid())
+  type           NotificationType
+  message        String           @db.Text
+  ticketId       String?
+  recipientId    String
+  organizationId String
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  // Relations
+  ticket         Ticket?          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  recipient      User             @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId])
+  @@index([organizationId])
+  @@index([ticketId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model AIPrediction {
+  id                   String   @id @default(uuid())
+  ticketId             String
+  predictedCategoryId  String?
+  predictedPriority    TicketPriority?
+  predictedDepartmentId String?
+  confidence           Float?
+  explanation          String?  @db.Text
+  suggestedNextSteps   String?  @db.Text
+  recommendedAgentId   String?
+  assignmentScore      Float?
+  assignmentConfidence Float?
+  factors              Json?
+  createdAt            DateTime @default(now())
+
+  // Relations
+  ticket               Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  predictedCategory    Category? @relation(fields: [predictedCategoryId], references: [id], onDelete: SetNull)
+  predictedDepartment  Department? @relation(fields: [predictedDepartmentId], references: [id], onDelete: SetNull)
+  recommendedAgent     User?    @relation(fields: [recommendedAgentId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([recommendedAgentId])
+  @@map("ai_predictions")
+}
+
+model TicketAssignmentHistory {
+  id          String   @id @default(uuid())
+  ticketId    String
+  assignedToId String
+  assignedById String
+  reason      String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  assignedTo  User     @relation("AssignmentAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+  assignedBy  User     @relation("AssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@index([assignedToId])
+  @@index([assignedById])
+  @@map("ticket_assignment_history")
+}
+
+model Watcher {
+  id        String   @id @default(uuid())
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@index([ticketId])
+  @@index([userId])
+  @@map("watchers")
+}
+
+model SLAConfiguration {
+  id                   String         @id @default(uuid())
+  organizationId       String
+  priority             TicketPriority
+  responseTimeMinutes  Int            // response SLA target in minutes
+  resolutionTimeMinutes Int           // resolution SLA target in minutes
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  // Relations
+  organization         Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, priority])
+  @@index([organizationId])
+  @@map("sla_configurations")
+}
+
+model SavedReply {
+  id             String   @id @default(uuid())
+  title          String   @db.VarChar(200)
+  content        String   @db.Text
+  organizationId String
+  createdById    String
+  updatedById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation("SavedReplyCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy      User?        @relation("SavedReplyUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@map("saved_replies")
 }

@@ -16,7 +16,11 @@
     "test:e2e": "playwright test",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
+    "prisma:seed": "node prisma/seed.js",
     "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

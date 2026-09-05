@@ -64,3 +64,23 @@ recorded up front.
   login form, renders dashboard with stat cards.
 
 Results of running these are recorded in `PROGRESS.md`.
+
+## Phase 2 status
+
+- `tests/schema.test.js` (Vitest): validates Prisma schema structure
+  — datasource/generator config, all 9 enums with correct values,
+  all 14 models present, composite unique constraints (Department,
+  User, TicketTag, Watcher, SLAConfiguration, Category, Tag),
+  required indexes, SLA tracking fields on Ticket, onDelete
+  behaviors (Cascade/Restrict/SetNull).
+- `tests/prisma-client.test.js` (Vitest): validates singleton pattern
+  — default export, repeated imports return same instance, globalThis
+  caching in development.
+- `tests/seed.test.js` (Vitest): validates seed script structure —
+  ESM imports, bcrypt hashing, env-var credentials, idempotency
+  (findFirst checks), required data (org, departments, users with
+  all 3 roles, 8 categories, SLA configs, tickets, watchers,
+  comments, assignment history, saved replies), atomic ticket
+  counter, progress logging.
+
+Results of running these are recorded in `PROGRESS.md`.

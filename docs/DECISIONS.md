@@ -7,6 +7,46 @@ Newest entries at the top.
 
 ---
 
+## D-007 — Prisma schema and seed approach (Phase 2)
+
+**Context:** Spec §28 says "The original project used Prisma db push
+intentionally rather than a migrations directory for the showcase
+build. If the implementation chooses migrations later, document the
+decision first." Phase 2 requires the complete V1 domain schema and
+seed infrastructure.
+
+**Decision:**
+
+1. **Schema approach: `prisma db push`** (not migrations). The original
+   project used `db push` intentionally for the showcase build, and
+   the Supabase-hosted database may already contain data from prior
+   work. Using `db push` avoids creating a migrations directory that
+   would conflict with an existing database state. This is documented
+   here per spec §28.
+
+2. **Seed idempotency.** The seed script (`prisma/seed.js`) uses
+   `findFirst` checks before every `create` to ensure it is safe to
+   run repeatedly without duplicating data. Tickets are created only
+   if zero tickets exist for the organization. Comments and assignment
+   history are created only if the respective tables are empty.
+
+3. **Ticket numbering.** Uses atomic counter increment on the
+   Organization model (`ticketCounter`) to generate collision-free
+   ticket numbers in NIR-YYYY-000001 format. The counter is
+   incremented in a single `update` call before creating tickets.
+
+4. **Self-referential User relations.** The User model has
+   `createdBy`/`updatedBy` fields that reference other Users (for
+   audit trails on Departments, Tickets, etc.). These use named
+   relations (`UserCreatedBy`/`UserUpdatedBy`) with reverse fields
+   (`createdUsers`/`updatedUsers`) to satisfy Prisma's requirement
+   that both sides of a relation are defined.
+
+5. **No migration directory created.** Consistent with the original
+   project's approach and the Supabase-hosted database context.
+
+---
+
 ## D-006 — Ticket lifecycle transition rules (Phase 0, pre-Phase 4)
 
 **Context:** Spec §12 draws the canonical lifecycle path but does not
