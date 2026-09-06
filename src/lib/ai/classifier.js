@@ -25,7 +25,7 @@ import "./providers/real";
  * @throws if provider is unavailable or returns invalid output
  */
 export async function classify(input, options = {}) {
-  const { timeout = 10000, categories, departments } = options;
+  const { timeout = 30000, categories, departments } = options;
 
   // Validate input
   const validatedInput = classificationInputSchema.parse(input);

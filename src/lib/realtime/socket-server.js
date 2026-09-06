@@ -49,11 +49,14 @@ export function setupSocketServer(io) {
     try {
       const user = await authenticateSocket(socket);
       if (!user) {
+        console.warn("[Socket.IO] Auth failed: no valid token found");
         return next(new Error("Authentication required"));
       }
+      console.log("[Socket.IO] Authenticated:", user.username, user.role);
       socket.data.user = user;
       next();
-    } catch {
+    } catch (err) {
+      console.error("[Socket.IO] Auth error:", err.message);
       next(new Error("Authentication failed"));
     }
   });

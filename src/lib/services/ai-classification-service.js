@@ -112,6 +112,9 @@ export async function classifyTicket(ticketId, user) {
     return { prediction, error: null };
   } catch (err) {
     console.error("AI classification failed:", err.message);
+    if (err.stack) {
+      console.error("AI classification stack:", err.stack.split("\n").slice(0, 3).join("\n"));
+    }
     return { prediction: null, error: "Classification failed" };
   }
 }

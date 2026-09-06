@@ -22,7 +22,7 @@ export function connectSocket(token) {
   socket = io({
     path: "/api/socketio",
     auth: token ? { token } : {},
-    transports: ["websocket", "polling"],
+    transports: ["polling", "websocket"],
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,

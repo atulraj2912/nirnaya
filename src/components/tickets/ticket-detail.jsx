@@ -41,6 +41,7 @@ export default function TicketDetail({ ticketId }) {
   const [assignAgentId, setAssignAgentId] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [commentsKey, setCommentsKey] = useState(0);
+  const userRole = currentUser?.role ?? null;
 
   useEffect(() => {
     async function fetchTicket() {
@@ -68,10 +69,10 @@ export default function TicketDetail({ ticketId }) {
         setAgents(data.agents);
       }
     }
-    if (currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") {
+    if (userRole === "AGENT" || userRole === "ADMIN") {
       fetchAgents();
     }
-  }, [currentUser?.role]);
+  }, [userRole]);
 
   useEffect(() => {
     async function fetchCurrentUser() {
@@ -230,7 +231,7 @@ export default function TicketDetail({ ticketId }) {
           ))}
         </div>
 
-        {(currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") && (
+        {(userRole === "AGENT" || userRole === "ADMIN") && (
           <div className="mt-4 flex items-end gap-3">
             <div className="flex-1">
               <label className="text-sm font-medium text-text">Assign to Agent</label>
@@ -260,9 +261,9 @@ export default function TicketDetail({ ticketId }) {
 
       <SLAInfo ticketId={ticketId} />
 
-      <AIClassification ticketId={ticketId} userRole={currentUser?.role} />
+      <AIClassification ticketId={ticketId} userRole={userRole} />
 
-      <AgentRecommendation ticketId={ticketId} userRole={currentUser?.role} />
+      <AgentRecommendation ticketId={ticketId} userRole={userRole} />
 
       {ticket.assignmentHistory?.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-6">
@@ -289,7 +290,7 @@ export default function TicketDetail({ ticketId }) {
         <h2 className="mb-4 text-sm font-semibold text-text">Add Comment</h2>
         <CommentForm
           ticketId={ticketId}
-          userRole={currentUser?.role}
+          userRole={userRole}
           onCommentAdded={() => setCommentsKey((k) => k + 1)}
         />
       </div>

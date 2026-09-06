@@ -73,7 +73,7 @@ CLASSIFICATION RULES:
 - Write a brief explanation of your classification reasoning.
 - Suggest 1-3 concise next steps for the support agent.
 
-You MUST respond with valid JSON matching this exact structure:
+OUTPUT FORMAT — YOU MUST RESPOND WITH EXACTLY ONE VALID JSON OBJECT:
 {
   "categoryName": "CATEGORY_NAME_OR_NULL",
   "predictedPriority": "PRIORITY",
@@ -83,7 +83,10 @@ You MUST respond with valid JSON matching this exact structure:
   "suggestedNextSteps": "Concise next steps"
 }
 
-Do NOT include any text outside the JSON object. Do NOT use markdown code fences.`;
+YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT.
+Do NOT include any text, commentary, or markdown before or after the JSON.
+Do NOT wrap the JSON in code fences or backticks.
+Do NOT output anything except the raw JSON object.`;
 }
 
 /**
@@ -101,7 +104,7 @@ function buildUserMessage(input) {
 }
 
 /**
- * Parse the model response, handling markdown code fences and extra text.
+ * Parse the model response, handling markdown code fences, thinking tokens, and extra text.
  */
 function parseModelResponse(text) {
   let cleaned = text.trim();
@@ -112,13 +115,65 @@ function parseModelResponse(text) {
     cleaned = fenceMatch[1].trim();
   }
 
-  // Try to find JSON object in the response
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[0];
+  // Try to extract a complete JSON object by finding balanced braces
+  // This handles cases where thinking tokens contain { or } characters
+  const jsonStart = cleaned.indexOf("{");
+  if (jsonStart === -1) {
+    throw new SyntaxError("No JSON object found in response");
   }
 
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let jsonEnd = -1;
+
+  for (let i = jsonStart; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === "\\") {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        jsonEnd = i;
+        break;
+      }
+    }
+  }
+
+  if (jsonEnd === -1) {
+    throw new SyntaxError("Unterminated JSON object in response");
+  }
+
+  cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
   return JSON.parse(cleaned);
+}
+
+/**
+ * Extract text content from OpenAI-compatible response.
+ * Gemini's compatibility layer may return content as an array of
+ * { type: "text", text: "..." } objects instead of a plain string.
+ */
+function extractContentText(content) {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((part) => part && part.type === "text" && part.text)
+      .map((part) => part.text)
+      .join("");
+  }
+  return String(content);
 }
 
 /**
@@ -218,8 +273,7 @@ export class RealAIProvider extends BaseProvider {
             { role: "user", content: userMessage },
           ],
           temperature: 0.1,
-          max_tokens: 500,
-          response_format: { type: "json_object" },
+          max_tokens: 2048,
         }),
         signal: controller.signal,
       });
@@ -229,6 +283,19 @@ export class RealAIProvider extends BaseProvider {
       // Handle HTTP errors
       if (!response.ok) {
         const status = response.status;
+        let responseBody = "";
+        try {
+          responseBody = await response.text();
+        } catch {
+          responseBody = "(unable to read response body)";
+        }
+
+        // Log safe diagnostics (never log API key or auth header)
+        console.error(`[AI Real Provider] HTTP ${status}`);
+        console.error(`[AI Real Provider] URL: ${baseUrl}/chat/completions`);
+        console.error(`[AI Real Provider] Model: ${model}`);
+        console.error(`[AI Real Provider] Response: ${responseBody.slice(0, 1000)}`);
+
         if (status === 401 || status === 403) {
           throw new Error(`AI API authentication failed (${status}). Check AI_API_KEY.`);
         }
@@ -238,19 +305,39 @@ export class RealAIProvider extends BaseProvider {
         if (status >= 500) {
           throw new Error(`AI API server error (${status}). Provider may be unavailable.`);
         }
-        throw new Error(`AI API error (${status})`);
+        throw new Error(`AI API error (${status}): ${responseBody.slice(0, 200)}`);
       }
 
       const data = await response.json();
 
       // Extract content from OpenAI-compatible response
-      const content = data?.choices?.[0]?.message?.content;
-      if (!content) {
+      // Gemini may return content as string or as array of { type: "text", text: "..." }
+      const rawContent = data?.choices?.[0]?.message?.content;
+      if (!rawContent) {
         throw new Error("AI API returned empty response");
       }
 
+      const content = extractContentText(rawContent);
+      if (!content || content.trim().length === 0) {
+        throw new Error("AI API returned empty response");
+      }
+
+      // Log content for debugging (first 500 chars only)
+      if (process.env.NODE_ENV === "development") {
+        const preview = content.slice(0, 500);
+        console.log(`[AI Real Provider] Content type: ${Array.isArray(rawContent) ? "array" : typeof rawContent}`);
+        console.log(`[AI Real Provider] Content preview: ${preview}`);
+      }
+
       // Parse and validate
-      const parsed = parseModelResponse(content);
+      let parsed;
+      try {
+        parsed = parseModelResponse(content);
+      } catch (parseErr) {
+        console.error(`[AI Real Provider] Parse error: ${parseErr.message}`);
+        console.error(`[AI Real Provider] Full content (${content.length} chars): ${content.slice(0, 2000)}`);
+        throw parseErr;
+      }
       const validated = validateOutputCategories(parsed, categories, departments);
 
       return {
