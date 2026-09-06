@@ -11,7 +11,7 @@ release-package ready, and demo ready.
 |---|---|
 | Lint | ✅ 0 errors, 1 pre-existing warning (avatar `<img>`) |
 | Prisma validation | ✅ valid |
-| Tests | ✅ 523/523 passed (34 test files) |
+| Tests | ✅ 545/545 passed (35 test files) |
 | Production build | ✅ compiled, 46 routes |
 
 ### Final Architecture
@@ -23,13 +23,14 @@ release-package ready, and demo ready.
 - Role-based access control (USER, AGENT, ADMIN)
 - Organization-scoped data isolation
 - Zod 4.5.4 validation on all inputs
+- Real AI classification (OpenAI-compatible via native fetch, no SDK)
 
 ### V1 Capabilities
 
 - Authentication & authorization (JWT, RBAC, org isolation)
 - Ticket CRUD with lifecycle state machine
-- AI classification (pluggable provider abstraction, mock provider)
-- Agent recommendation (algorithmic scoring engine)
+- AI classification (pluggable provider abstraction, mock + real LLM provider)
+- Agent recommendation (algorithmic scoring engine, AI-enhanced context)
 - SLA engine (priority-based elapsed-time tracking)
 - Real-time notifications (Socket.IO)
 - Comments (public/internal) with visibility rules

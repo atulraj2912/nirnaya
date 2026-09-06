@@ -366,10 +366,37 @@ export async function getRecommendations(ticketId, user) {
       return { error: "Ticket not found" };
     }
 
-    // 2. Find eligible agents
+    // 2. Fetch latest AI prediction for enhanced context
+    //    AI-predicted fields supplement (not replace) manual ticket data.
+    let aiPrediction = null;
+    try {
+      const predictions = await prisma.aIPrediction.findMany({
+        where: { ticketId },
+        include: {
+          predictedCategory: { select: { id: true, name: true } },
+          predictedDepartment: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      });
+      aiPrediction = predictions[0] || null;
+    } catch {
+      // Prediction fetch failure is non-fatal
+    }
+
+    // 3. Build enhanced ticket context using AI prediction where ticket lacks data
+    //    Only use AI predictions for fields the ticket doesn't already have set.
+    const effectiveCategoryId = ticket.categoryId
+      || aiPrediction?.predictedCategoryId || null;
+    const effectiveDepartmentId = ticket.departmentId
+      || aiPrediction?.predictedDepartmentId || null;
+    const effectivePriority = ticket.priority
+      || aiPrediction?.predictedPriority || "MEDIUM";
+
+    // 4. Find eligible agents using effective department
     const agents = await findEligibleAgents(
       ticket.organizationId,
-      ticket.departmentId
+      effectiveDepartmentId
     );
 
     if (agents.length === 0) {
@@ -377,26 +404,25 @@ export async function getRecommendations(ticketId, user) {
         recommendations: [],
         totalEligibleAgents: 0,
         generatedAt: new Date().toISOString(),
+        aiEnhanced: !!aiPrediction,
       };
     }
 
     const agentIds = agents.map((a) => a.id);
 
-    // 3. Fetch workload and experience data
-    // Sequential queries for predictable mock behavior in tests
-    // and clearer error isolation.
+    // 5. Fetch workload and experience data using effective category
     const workloadMap = await calculateWorkloads(agentIds);
-    const experienceMap = await calculateExperience(agentIds, ticket.categoryId);
+    const experienceMap = await calculateExperience(agentIds, effectiveCategoryId);
 
-    // 4. Score each agent
+    // 6. Score each agent
     const scored = agents.map((agent) => {
       const workload = workloadMap.get(agent.id) || { activeTickets: 0, highPriorityTickets: 0 };
       const experience = experienceMap.get(agent.id) || { categoryResolved: 0, totalResolved: 0 };
 
-      const fDept = departmentMatch(agent.departmentId, ticket.departmentId);
+      const fDept = departmentMatch(agent.departmentId, effectiveDepartmentId);
       const fCatExp = categoryExperienceFactor(experience.categoryResolved);
       const fWorkload = workloadFactor(workload.activeTickets);
-      const fPriority = priorityReadinessFactor(workload.activeTickets, ticket.priority);
+      const fPriority = priorityReadinessFactor(workload.activeTickets, effectivePriority);
       const fHistExp = historicalExperienceFactor(experience.totalResolved);
 
       const contribution = {
@@ -439,7 +465,7 @@ export async function getRecommendations(ticketId, user) {
       };
     });
 
-    // 5. Sort by spec §18 tie-break order:
+    // 7. Sort by spec §18 tie-break order:
     //    score desc → category experience desc → workload asc →
     //    high/critical workload asc → stable agent ID asc
     scored.sort((a, b) => {
@@ -450,12 +476,12 @@ export async function getRecommendations(ticketId, user) {
       return a._agentId.localeCompare(b._agentId);
     });
 
-    // 6. Calculate confidence for top recommendation
+    // 8. Calculate confidence for top recommendation
     const topScore = scored[0]?.score || 0;
     const runnerUpScore = scored.length > 1 ? scored[1].score : 0;
     const confidence = calculateConfidence(topScore, runnerUpScore, scored.length);
 
-    // 7. Build final output with rank, confidence, explanation, timestamp
+    // 9. Build final output with rank, confidence, explanation, timestamp
     const generatedAt = new Date().toISOString();
     const recommendations = scored.map((s, i) => ({
       agentId: s.agentId,
@@ -475,7 +501,7 @@ export async function getRecommendations(ticketId, user) {
           historicalExperience: s.factors[4].normalized,
         },
         s,
-        ticket
+        { ...ticket, priority: effectivePriority }
       ),
       factors: s.factors,
       rank: i + 1,
@@ -487,6 +513,7 @@ export async function getRecommendations(ticketId, user) {
       recommendations,
       totalEligibleAgents: agents.length,
       generatedAt,
+      aiEnhanced: !!aiPrediction,
     };
   } catch (err) {
     console.error("Agent recommendation failed:", err.message);

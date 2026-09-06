@@ -7,6 +7,52 @@ Newest entries at the top.
 
 ---
 
+## D-017 — Real AI provider integration (Phase 13)
+
+**Context:** NIRNAYA's AI classification system had a provider abstraction
+with only a mock/keyword-based provider. The system needed a real
+LLM-powered provider while preserving the mock for tests and fallback.
+
+**Decision:**
+
+1. **Real AI provider implemented via OpenAI-compatible API.**
+   `src/lib/ai/providers/real.js` uses native `fetch` to call any
+   OpenAI-compatible `/v1/chat/completions` endpoint. No AI SDK
+   dependencies added. Works with OpenAI, Azure OpenAI, Ollama,
+   LM Studio, and similar providers.
+
+2. **Provider selection via env vars.** `AI_PROVIDER=real` activates
+   the real provider. `AI_API_KEY` provides the API key.
+   `AI_API_BASE_URL` and `AI_MODEL` are optional (default to
+   OpenAI's API and gpt-4o-mini). If the API key is missing or
+   the real provider fails, the system falls back to mock.
+
+3. **Organization-scoped classification context.** The classifier
+   now passes the ticket's organization categories and departments
+   to the provider, so the LLM selects from actual available values
+   rather than inventing arbitrary names.
+
+4. **AI-assisted agent recommendations.** The recommendation service
+   now fetches the latest AI prediction and uses validated
+   category/department/priority fields as enhanced context for
+   deterministic scoring. AI never directly assigns agents.
+
+5. **Prompt injection resistance.** The system prompt explicitly
+   treats ticket content as untrusted data, not instructions.
+
+6. **Graceful degradation.** All failure modes (timeout, 401/403,
+   429, network error, invalid JSON, missing fields) are handled
+   without crashing ticket creation.
+
+**Rationale:**
+- Native fetch avoids SDK lock-in and keeps the dependency tree small.
+- OpenAI-compatible format is the industry standard for LLM APIs.
+- Organization-scoped context prevents cross-org data leakage.
+- Deterministic scoring remains authoritative for agent recommendations.
+- Prompt injection defense is critical since ticket content is user-supplied.
+
+---
+
 ## D-016 — Final V1 cleanup, double AppShell fix, dead code removal (Phase 12)
 
 **Context:** Phase 12 is the final V1 development phase focused on

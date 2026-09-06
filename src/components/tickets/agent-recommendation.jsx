@@ -68,6 +68,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
   useEffect(() => {
     let cancelled = false;
     async function init() {
+      if (userRole !== "AGENT" && userRole !== "ADMIN") return;
       try {
         const res = await fetch(`/api/tickets/${ticketId}/recommendations`);
         if (res.ok && !cancelled) {
@@ -85,7 +86,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
     }
     init();
     return () => { cancelled = true; };
-  }, [ticketId]);
+  }, [ticketId, userRole]);
 
   const canRecommend = userRole === "AGENT" || userRole === "ADMIN";
 

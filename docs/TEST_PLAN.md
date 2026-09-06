@@ -306,14 +306,47 @@ Results of running these are recorded in `PROGRESS.md`.
   dead code in `src/lib/ai/recommendation-schema.js` which was never
   imported by any production file. The recommendation engine computes
   scores algorithmically without AI provider involvement.
-- All existing tests pass after cleanup: 523/523.
+- All existing tests pass after cleanup: 545/545.
+
+---
+
+## Phase 13 — Real AI Provider Tests
+
+**Files:**
+
+- `tests/ai-real-provider.test.js` — 22 tests for the real AI provider
+
+**Coverage:**
+
+1. Valid structured output from API
+2. API request format verification
+3. Categories/departments passed in system prompt
+4. Null category handling
+5. Invalid JSON response
+6. Markdown code fence stripping
+7. Unknown category rejection
+8. Unknown department rejection
+9. Case-insensitive department matching
+10. Invalid priority rejection
+11. Confidence clamping to 0-1
+12. NaN confidence handling
+13. Long string truncation
+14. HTTP 401/403 authentication errors
+15. HTTP 429 rate limiting
+16. HTTP 500 server errors
+17. Empty API response
+18. Missing API key
+19. Network timeout
+20. Prompt injection resistance
+21. Provider name verification
+22. API base URL configuration
 
 ## V1 final status
 
 | Metric | Value |
 |--------|-------|
 | Test files | 34 |
-| Total tests | 523 |
+| Total tests | 545 |
 | All tests passing | Yes |
 
 Results of running these are recorded in `PROGRESS.md`.

@@ -4,6 +4,7 @@ import { validateClassificationOutput, classificationInputSchema } from "./valid
 
 // Import providers to trigger auto-registration
 import "./providers/mock";
+import "./providers/real";
 
 /**
  * Classify a ticket using the configured AI provider.
@@ -18,11 +19,13 @@ import "./providers/mock";
  * @param {import("./validation").ClassificationInput} input - Ticket context
  * @param {object} [options] - Additional options
  * @param {number} [options.timeout=10000] - Provider timeout in ms
+ * @param {string[]} [options.categories] - Available category names for the org
+ * @param {string[]} [options.departments] - Available department names for the org
  * @returns {Promise<object>} Validated classification output
  * @throws if provider is unavailable or returns invalid output
  */
 export async function classify(input, options = {}) {
-  const { timeout = 10000 } = options;
+  const { timeout = 10000, categories, departments } = options;
 
   // Validate input
   const validatedInput = classificationInputSchema.parse(input);
@@ -40,9 +43,14 @@ export async function classify(input, options = {}) {
     provider = getProvider("mock");
   }
 
+  // Build context with org-scoped categories/departments for the provider
+  const context = {};
+  if (categories) context.categories = categories;
+  if (departments) context.departments = departments;
+
   // Call provider with timeout
   const result = await Promise.race([
-    provider.classify(validatedInput, {}),
+    provider.classify(validatedInput, context),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`AI provider "${provider.name}" timed out after ${timeout}ms`)), timeout)
     ),

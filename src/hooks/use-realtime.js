@@ -16,8 +16,6 @@ import {
 
 export function useSocketConnection(token) {
   useEffect(() => {
-    if (!token) return;
-
     const socket = connectSocket(token);
 
     return () => {

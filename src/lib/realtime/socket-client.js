@@ -21,7 +21,7 @@ export function connectSocket(token) {
 
   socket = io({
     path: "/api/socketio",
-    auth: { token },
+    auth: token ? { token } : {},
     transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 10,

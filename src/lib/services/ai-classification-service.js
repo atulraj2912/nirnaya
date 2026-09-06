@@ -42,6 +42,18 @@ export async function classifyTicket(ticketId, user) {
       return { prediction: null, error: "Ticket not found" };
     }
 
+    // Fetch org-scoped categories and departments for the AI provider
+    const [orgCategories, orgDepartments] = await Promise.all([
+      prisma.category.findMany({
+        where: { organizationId: user.organizationId, isActive: true },
+        select: { name: true },
+      }),
+      prisma.department.findMany({
+        where: { organizationId: user.organizationId, isActive: true },
+        select: { name: true },
+      }),
+    ]);
+
     // Build classification input
     const input = {
       title: ticket.title,
@@ -52,8 +64,11 @@ export async function classifyTicket(ticketId, user) {
       categoryName: ticket.category?.name || null,
     };
 
-    // Call AI classifier
-    const result = await classify(input);
+    // Call AI classifier with org-scoped context
+    const result = await classify(input, {
+      categories: orgCategories.map((c) => c.name),
+      departments: orgDepartments.map((d) => d.name),
+    });
 
     // Resolve predicted category to a real Category ID (same org)
     let predictedCategoryId = null;

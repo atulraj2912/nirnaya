@@ -68,8 +68,10 @@ export default function TicketDetail({ ticketId }) {
         setAgents(data.agents);
       }
     }
-    fetchAgents();
-  }, []);
+    if (currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") {
+      fetchAgents();
+    }
+  }, [currentUser?.role]);
 
   useEffect(() => {
     async function fetchCurrentUser() {
@@ -228,30 +230,32 @@ export default function TicketDetail({ ticketId }) {
           ))}
         </div>
 
-        <div className="mt-4 flex items-end gap-3">
-          <div className="flex-1">
-            <label className="text-sm font-medium text-text">Assign to Agent</label>
-            <select
-              value={assignAgentId}
-              onChange={(e) => setAssignAgentId(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        {(currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") && (
+          <div className="mt-4 flex items-end gap-3">
+            <div className="flex-1">
+              <label className="text-sm font-medium text-text">Assign to Agent</label>
+              <select
+                value={assignAgentId}
+                onChange={(e) => setAssignAgentId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="">Select agent</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.username} ({a.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleAssign}
+              disabled={!assignAgentId || actionLoading}
             >
-              <option value="">Select agent</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.username} ({a.role})
-                </option>
-              ))}
-            </select>
+              Assign
+            </Button>
           </div>
-          <Button
-            size="sm"
-            onClick={handleAssign}
-            disabled={!assignAgentId || actionLoading}
-          >
-            Assign
-          </Button>
-        </div>
+        )}
       </div>
 
       <SLAInfo ticketId={ticketId} />

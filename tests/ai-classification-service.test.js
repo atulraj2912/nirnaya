@@ -8,9 +8,11 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     category: {
       findFirst: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     department: {
       findFirst: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     aIPrediction: {
       create: vi.fn(),

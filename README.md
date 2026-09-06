@@ -82,8 +82,10 @@ Optional:
 
 | Variable | Description |
 |----------|-------------|
-| `AI_PROVIDER` | AI provider name (defaults to "mock" if not set) |
-| `AI_PROVIDER_API_KEY` | API key for the configured AI provider |
+| `AI_PROVIDER` | AI provider: `"real"` for LLM, `"mock"` for keyword-based (default: `"mock"`) |
+| `AI_API_KEY` | API key for the real AI provider (OpenAI-compatible) |
+| `AI_API_BASE_URL` | API base URL (default: `https://api.openai.com/v1`) |
+| `AI_MODEL` | Model name (default: `gpt-4o-mini`) |
 | `PORT` | Server port (defaults to 3000) |
 
 ## Database Setup

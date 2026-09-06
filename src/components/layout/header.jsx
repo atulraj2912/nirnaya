@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/notification-bell";
-import { useSocketStatus } from "@/hooks/use-realtime";
+import { useSocketStatus, useSocketConnection } from "@/hooks/use-realtime";
 
 function getInitials(user) {
   if (!user) return "U";
@@ -39,6 +39,7 @@ const statusLabels = {
 export default function Header({ user }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  useSocketConnection();
   const socketStatus = useSocketStatus();
 
   async function handleLogout() {

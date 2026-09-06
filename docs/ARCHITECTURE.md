@@ -154,9 +154,9 @@ Final V1:
       provider.js              # BaseProvider class, provider registry
       validation.js            # Zod schemas for AI input/output
       classifier.js            # classifier orchestrator (provider resolution, timeout)
-      recommendation-schema.js # Zod schemas for recommendation output validation
       /providers/
         mock.js                # deterministic keyword-based mock provider
+        real.js                # OpenAI-compatible LLM provider (native fetch)
 /tests
   health.test.js               # Vitest — health endpoint
   env.test.js                  # Vitest — env validation schema
@@ -173,9 +173,9 @@ Final V1:
   ticket-service.test.js       # Vitest — ticket service layer
   ai-validation.test.js        # Vitest — AI validation schemas
   ai-provider.test.js          # Vitest — mock provider
+  ai-real-provider.test.js     # Vitest — real AI provider (mocked fetch)
   ai-classifier.test.js        # Vitest — classifier orchestrator
   ai-classification-service.test.js  # Vitest — classification service
-  recommendation-schema.test.js      # Vitest — recommendation validation schemas
   agent-recommendation-service.test.js # Vitest — agent recommendation service
   sla-service.test.js                 # Vitest — SLA clock management
 /e2e
@@ -219,11 +219,10 @@ every query in the service layer must filter by it (spec §5, §26).
 This is a cross-cutting rule enforced at the service layer, not
 something delegated to individual route handlers to remember.
 
-## AI provider abstraction (Phase 5)
+## AI provider abstraction (Phase 5/13)
 
-No real AI provider is selected yet (see `DECISIONS.md`, D-001). The
-mock provider provides deterministic keyword-based classification for
-development and testing.
+The system supports both a deterministic mock provider and a real
+LLM-powered provider via an OpenAI-compatible API.
 
 Provider architecture (`src/lib/ai/`):
 
@@ -231,35 +230,57 @@ Provider architecture (`src/lib/ai/`):
 provider.js          # BaseProvider class, provider registry
 validation.js        # Zod schemas for AI input/output
 classifier.js        # orchestrator: provider resolution, timeout, validation
-recommendation-schema.js # Zod schemas for recommendation output
 providers/
   mock.js            # deterministic keyword-based provider
+  real.js            # OpenAI-compatible LLM provider (native fetch)
 ```
+
+Provider selection:
+- `AI_PROVIDER=real` + `AI_API_KEY` set → uses real LLM provider
+- `AI_PROVIDER=mock` or unset → uses deterministic mock provider
+- If real provider fails, falls back to mock automatically
+
+The real provider (`real.js`):
+- Uses native `fetch` — no AI SDK dependency
+- Works with OpenAI, Azure OpenAI, Ollama, LM Studio, etc.
+- Receives org-scoped categories/departments in the system prompt
+- Validates all output against known category/department names
+- Handles timeout (30s), 401/403, 429, network errors, invalid JSON
+- Treats ticket content as untrusted data (prompt injection defense)
 
 Adding a new provider:
 
 1. Create `src/lib/ai/providers/<name>.js` extending `BaseProvider`
 2. Implement `classify(input, context)` returning `ClassificationOutput`
 3. Register with `registerProvider("<name>", ProviderClass)`
-4. Set `AI_PROVIDER=<name>` in environment
+4. Import in `classifier.js` to trigger auto-registration
+5. Set `AI_PROVIDER=<name>` in environment
 
 The concrete provider call is an implementation detail behind the
 `classify()` function; route handlers and UI only depend on the
 return shape (`categoryName`, `predictedPriority`, `departmentName`,
 `confidence`, `explanation`, `suggestedNextSteps`).
 
-## Agent recommendation engine (Phase 6)
+## Agent recommendation engine (Phase 6/13)
 
 Per spec §18: "Recommendation is NOT the same thing as assignment.
 AI recommends. Authorized human accepts/assigns."
 
 The recommendation engine (`src/lib/services/agent-recommendation-service.js`)
 computes deterministic, explainable agent recommendations from database
-data. It does not call an external AI provider.
+data. It does NOT directly call an AI provider, but uses validated
+AI prediction output as enhanced context when available.
 
-Eligibility rules:
+AI-enhanced flow:
+1. Ticket is classified by AI (validated category/department/priority)
+2. Recommendation engine uses AI-predicted fields as fallback context
+   when ticket lacks manual values
+3. Deterministic scoring engine remains authoritative
+4. AI never directly assigns agents
+
+Elibility rules:
 - role = AGENT, same organization, ACTIVE status
-- same department when ticket department is known
+- same department when department is known (from ticket or AI prediction)
 - exclude ADMIN, USER, inactive, cross-org agents
 
 Scoring factors (spec §18 weights):
