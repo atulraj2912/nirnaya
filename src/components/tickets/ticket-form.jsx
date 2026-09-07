@@ -92,9 +92,7 @@ export default function TicketForm() {
     }
   }
 
-  const filteredCategories = form.departmentId
-    ? categories.filter((c) => c.departmentId === form.departmentId)
-    : categories;
+  const filteredCategories = categories;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

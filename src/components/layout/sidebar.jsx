@@ -15,7 +15,7 @@ const navSections = [
     items: [
       { label: "All Tickets", href: "/tickets", icon: "ticket" },
       { label: "Create Ticket", href: "/tickets/new", icon: "plus" },
-      { label: "My Tickets", href: "/tickets/mine", icon: "user" },
+      { label: "My Active Tickets", href: "/tickets/mine", icon: "user" },
     ],
   },
   {

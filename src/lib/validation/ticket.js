@@ -68,6 +68,7 @@ export const ticketListQuerySchema = z.object({
   assignedAgentId: z.string().optional(),
   requesterId: z.string().optional(),
   search: z.string().max(200).optional(),
+  scope: z.enum(["my-active"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   sort: z.enum(["createdAt", "updatedAt", "priority", "status"]).default("createdAt"),

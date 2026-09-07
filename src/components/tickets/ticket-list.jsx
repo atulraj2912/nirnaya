@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
 
-export default function TicketList() {
+export default function TicketList({ scope }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,6 +26,7 @@ export default function TicketList() {
       setLoading(true);
       setError("");
       const params = new URLSearchParams();
+      if (scope) params.set("scope", scope);
       if (filters.status) params.set("status", filters.status);
       if (filters.priority) params.set("priority", filters.priority);
       if (filters.search) params.set("search", filters.search);
@@ -48,7 +49,7 @@ export default function TicketList() {
       setLoading(false);
     }
     fetchTickets();
-  }, [filters]);
+  }, [filters, scope]);
 
   function updateFilter(key, value) {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
@@ -104,7 +105,9 @@ export default function TicketList() {
           </button>
         </div>
       ) : tickets.length === 0 ? (
-        <div className="flex justify-center py-12 text-text-muted">No tickets found</div>
+        <div className="flex justify-center py-12 text-text-muted">
+          {scope === "my-active" ? "No active tickets." : "No tickets found"}
+        </div>
       ) : (
         <div className="divide-y divide-border rounded-xl border border-border bg-surface">
           {tickets.map((ticket) => (

@@ -176,6 +176,17 @@ export async function listTickets(query, user) {
     ];
   }
 
+  // Scope-based filtering overrides ownership and status filters
+  if (params.scope === "my-active") {
+    if (user.role === "USER") {
+      where.requesterId = user.id;
+      where.status = { notIn: ["RESOLVED", "CLOSED"] };
+    } else {
+      where.assignedAgentId = user.id;
+      where.status = { in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"] };
+    }
+  }
+
   const skip = (params.page - 1) * params.limit;
 
   const [tickets, total] = await Promise.all([

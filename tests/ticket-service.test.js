@@ -307,5 +307,107 @@ describe("Ticket service", () => {
       const findCall = prisma.ticket.findMany.mock.calls[0][0];
       expect(findCall.where.requesterId).toBeUndefined();
     });
+
+    describe("scope: my-active", () => {
+      it("USER gets own tickets excluding RESOLVED and CLOSED", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.requesterId).toBe("user-1");
+        expect(findCall.where.status).toEqual({ notIn: ["RESOLVED", "CLOSED"] });
+      });
+
+      it("AGENT gets assigned tickets with active statuses", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.assignedAgentId).toBe("agent-1");
+        expect(findCall.where.status).toEqual({
+          in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"],
+        });
+      });
+
+      it("ADMIN gets assigned tickets with active statuses", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active" }, mockAdmin);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.assignedAgentId).toBe("admin-1");
+        expect(findCall.where.status).toEqual({
+          in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"],
+        });
+      });
+
+      it("enforces org isolation with scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.organizationId).toBe("org-1");
+      });
+
+      it("client-supplied requesterId is ignored for USER", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", requesterId: "other-user" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.requesterId).toBe("user-1");
+      });
+
+      it("client-supplied assignedAgentId is ignored for AGENT", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", assignedAgentId: "other-agent" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.assignedAgentId).toBe("agent-1");
+      });
+
+      it("USER scope returns own active tickets", async () => {
+        const activeTicket = { ...mockTicket, status: "IN_PROGRESS" };
+        prisma.ticket.findMany.mockResolvedValue([activeTicket]);
+        prisma.ticket.count.mockResolvedValue(1);
+
+        const result = await listTickets({ scope: "my-active" }, mockUser);
+        expect(result.tickets).toHaveLength(1);
+        expect(result.tickets[0].status).toBe("IN_PROGRESS");
+      });
+
+      it("USER scope excludes RESOLVED tickets", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "RESOLVED" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({ notIn: ["RESOLVED", "CLOSED"] });
+      });
+
+      it("AGENT scope excludes RESOLVED and CLOSED tickets", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        const statuses = findCall.where.status.in;
+        expect(statuses).not.toContain("RESOLVED");
+        expect(statuses).not.toContain("CLOSED");
+        expect(statuses).not.toContain("OPEN");
+      });
+    });
   });
 });
