@@ -98,7 +98,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-text">AI Agent Recommendation</h2>
+        <h2 className="text-sm font-semibold text-text">AI Agent Recommendations</h2>
         <Button
           size="sm"
           variant="secondary"
@@ -127,10 +127,10 @@ export default function AgentRecommendation({ ticketId, userRole }) {
         <div className="space-y-4">
           <p className="text-xs text-text-muted">
             {totalEligible} eligible agent{totalEligible !== 1 ? "s" : ""} in your organization.
-            Top recommendation shown below.
+            Top recommendations shown below.
           </p>
 
-          {recommendations.slice(0, 3).map((rec) => (
+          {recommendations.slice(0, 2).map((rec) => (
             <div
               key={rec.agentId}
               className={`rounded-lg border p-4 ${
@@ -204,9 +204,9 @@ export default function AgentRecommendation({ ticketId, userRole }) {
             </div>
           ))}
 
-          {recommendations.length > 3 && (
+          {recommendations.length > 2 && (
             <p className="text-xs text-text-muted text-center">
-              {recommendations.length - 3} more recommendation{recommendations.length - 3 !== 1 ? "s" : ""} available.
+              {recommendations.length - 2} more recommendation{recommendations.length - 2 !== 1 ? "s" : ""} available.
             </p>
           )}
         </div>

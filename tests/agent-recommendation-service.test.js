@@ -55,6 +55,10 @@ const mockAgents = [
 describe("Agent recommendation service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Clean up any aIPrediction mock added by previous tests
+    if (prisma.aIPrediction) {
+      delete prisma.aIPrediction;
+    }
   });
 
   describe("getRecommendations", () => {
@@ -69,6 +73,61 @@ describe("Agent recommendation service", () => {
       expect(result.recommendations).toBeDefined();
       expect(result.totalEligibleAgents).toBe(2);
       expect(result.generatedAt).toBeDefined();
+    });
+
+    it("returns exactly 2 recommendations when 2 eligible agents exist", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.recommendations).toHaveLength(2);
+    });
+
+    it("returns only top 2 when 3 or more eligible agents exist", async () => {
+      const threeAgents = [
+        ...mockAgents,
+        { id: "agent-3", username: "carol", email: "carol@test.com", departmentId: "dept-1", department: { name: "IT Support" } },
+      ];
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(threeAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.recommendations).toHaveLength(2);
+      expect(result.totalEligibleAgents).toBe(3);
+    });
+
+    it("returns only top 2 when 5 eligible agents exist", async () => {
+      const fiveAgents = Array.from({ length: 5 }, (_, i) => ({
+        id: `agent-${i + 1}`,
+        username: `agent${i + 1}`,
+        email: `agent${i + 1}@test.com`,
+        departmentId: "dept-1",
+        department: { name: "IT Support" },
+      }));
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(fiveAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.recommendations).toHaveLength(2);
+      expect(result.totalEligibleAgents).toBe(5);
+    });
+
+    it("ranking order: recommendation #1 has higher score than #2", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.recommendations[0].score).toBeGreaterThanOrEqual(result.recommendations[1].score);
+      expect(result.recommendations[0].rank).toBe(1);
+      expect(result.recommendations[1].rank).toBe(2);
     });
 
     it("returns error for non-existent ticket", async () => {
@@ -98,6 +157,17 @@ describe("Agent recommendation service", () => {
 
       expect(result.recommendations).toEqual([]);
       expect(result.totalEligibleAgents).toBe(0);
+    });
+
+    it("returns exactly 1 recommendation when only 1 eligible agent exists", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([mockAgents[0]]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].agentId).toBe("agent-1");
     });
 
     it("only queries AGENT role users (not ADMIN or USER)", async () => {
@@ -148,6 +218,70 @@ describe("Agent recommendation service", () => {
         expect.objectContaining({
           where: expect.not.objectContaining({
             departmentId: expect.anything(),
+          }),
+        })
+      );
+    });
+
+    it("USER users are never recommended", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([
+        { id: "user-role", username: "user1", email: "u@test.com", departmentId: "dept-1", department: { name: "IT" } },
+      ]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      await getRecommendations("ticket-1", mockUser);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            role: "AGENT",
+          }),
+        })
+      );
+      const roleFilter = prisma.user.findMany.mock.calls[0][0].where.role;
+      expect(roleFilter).not.toBe("USER");
+    });
+
+    it("ADMIN users are never recommended", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      await getRecommendations("ticket-1", mockUser);
+
+      const where = prisma.user.findMany.mock.calls[0][0].where;
+      expect(where.role).toBe("AGENT");
+      expect(where.role).not.toBe("ADMIN");
+    });
+
+    it("inactive agents are never recommended", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      await getRecommendations("ticket-1", mockUser);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: "ACTIVE",
+          }),
+        })
+      );
+    });
+
+    it("cross-organization agents are never recommended", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      await getRecommendations("ticket-1", mockUser);
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: "org-1",
           }),
         })
       );
@@ -296,6 +430,101 @@ describe("Agent recommendation service", () => {
       const top = result.recommendations[0];
       expect(top.confidence).toBeGreaterThanOrEqual(0.50);
       expect(top.confidence).toBeLessThanOrEqual(0.98);
+    });
+
+    it("second recommendation has null confidence (only top gets confidence)", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      if (result.recommendations.length > 1) {
+        expect(result.recommendations[1].confidence).toBeNull();
+      }
+    });
+
+    it("both recommendations include factors, explanation, and rank", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      for (const rec of result.recommendations) {
+        expect(rec.factors).toBeDefined();
+        expect(rec.factors.length).toBe(5);
+        expect(rec.explanation).toBeTruthy();
+        expect(typeof rec.explanation).toBe("string");
+        expect(rec.rank).toBeGreaterThanOrEqual(1);
+        expect(rec.rank).toBeLessThanOrEqual(2);
+      }
+    });
+
+    it("existing scoring weights are preserved", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue([mockAgents[0]]);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      const result = await getRecommendations("ticket-1", mockUser);
+      const factors = result.recommendations[0].factors;
+
+      const deptFactor = factors.find((f) => f.name === "Department Match");
+      const catFactor = factors.find((f) => f.name === "Category Experience");
+      const workloadFactor = factors.find((f) => f.name === "Workload");
+      const priorityFactor = factors.find((f) => f.name === "Priority Readiness");
+      const histFactor = factors.find((f) => f.name === "Historical Experience");
+
+      expect(deptFactor.weight).toBe(0.30);
+      expect(catFactor.weight).toBe(0.30);
+      expect(workloadFactor.weight).toBe(0.25);
+      expect(priorityFactor.weight).toBe(0.10);
+      expect(histFactor.weight).toBe(0.05);
+    });
+
+    it("AI enrichment continues to work when AI prediction exists", async () => {
+      const ticketWithNoCategory = {
+        ...mockTicket,
+        categoryId: null,
+        category: null,
+      };
+      prisma.ticket.findUnique.mockResolvedValue(ticketWithNoCategory);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      // Mock AI prediction lookup (aIPrediction.findMany)
+      const mockAIPrediction = {
+        id: "pred-1",
+        ticketId: "ticket-1",
+        predictedCategoryId: "cat-1",
+        predictedDepartmentId: "dept-1",
+        predictedPriority: "HIGH",
+        predictedCategory: { id: "cat-1", name: "NETWORK" },
+        predictedDepartment: { id: "dept-1", name: "IT Support" },
+        createdAt: new Date(),
+      };
+
+      // We need to add aIPrediction to the mock
+      prisma.aIPrediction = { findMany: vi.fn().mockResolvedValue([mockAIPrediction]) };
+
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.error).toBeUndefined();
+      expect(result.aiEnhanced).toBe(true);
+      expect(result.recommendations.length).toBeGreaterThan(0);
+    });
+
+    it("works when no AI prediction exists", async () => {
+      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      prisma.user.findMany.mockResolvedValue(mockAgents);
+      prisma.ticket.groupBy.mockResolvedValue([]);
+
+      // No aIPrediction mock needed - it's caught internally
+      const result = await getRecommendations("ticket-1", mockUser);
+
+      expect(result.error).toBeUndefined();
+      expect(result.aiEnhanced).toBe(false);
+      expect(result.recommendations.length).toBeGreaterThan(0);
     });
 
     it("tie-breaking is deterministic (stable agent ID)", async () => {

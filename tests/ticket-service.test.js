@@ -408,6 +408,62 @@ describe("Ticket service", () => {
         expect(statuses).not.toContain("CLOSED");
         expect(statuses).not.toContain("OPEN");
       });
+
+      it("client-supplied OPEN status is overridden by USER scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "OPEN" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({ notIn: ["RESOLVED", "CLOSED"] });
+      });
+
+      it("client-supplied CLOSED status is overridden by USER scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "CLOSED" }, mockUser);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({ notIn: ["RESOLVED", "CLOSED"] });
+      });
+
+      it("client-supplied OPEN status is overridden by AGENT scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "OPEN" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({
+          in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"],
+        });
+      });
+
+      it("client-supplied CLOSED status is overridden by AGENT scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "CLOSED" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({
+          in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"],
+        });
+      });
+
+      it("client-supplied RESOLVED status is overridden by AGENT scope", async () => {
+        prisma.ticket.findMany.mockResolvedValue([]);
+        prisma.ticket.count.mockResolvedValue(0);
+
+        await listTickets({ scope: "my-active", status: "RESOLVED" }, mockAgent);
+
+        const findCall = prisma.ticket.findMany.mock.calls[0][0];
+        expect(findCall.where.status).toEqual({
+          in: ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"],
+        });
+      });
     });
   });
 });

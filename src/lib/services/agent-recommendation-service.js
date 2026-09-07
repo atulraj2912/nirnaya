@@ -482,8 +482,9 @@ export async function getRecommendations(ticketId, user) {
     const confidence = calculateConfidence(topScore, runnerUpScore, scored.length);
 
     // 9. Build final output with rank, confidence, explanation, timestamp
+    //    Return top 2 recommendations per spec
     const generatedAt = new Date().toISOString();
-    const recommendations = scored.map((s, i) => ({
+    const recommendations = scored.slice(0, 2).map((s, i) => ({
       agentId: s.agentId,
       username: s.username,
       email: s.email,

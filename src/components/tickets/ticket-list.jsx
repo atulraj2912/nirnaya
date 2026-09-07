@@ -5,9 +5,21 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
 
+const ACTIVE_STATUSES = ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"];
+
+const ALL_STATUSES = ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "CLOSED", "REOPENED"];
+
 export default function TicketList({ scope }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const isActiveScope = scope === "my-active";
+  const allowedStatuses = isActiveScope ? ACTIVE_STATUSES : ALL_STATUSES;
+
+  const initialStatus = searchParams.get("status") || "";
+  const sanitizedStatus = initialStatus && allowedStatuses.includes(initialStatus)
+    ? initialStatus
+    : "";
 
   const [tickets, setTickets] = useState([]);
   const [total, setTotal] = useState(0);
@@ -15,7 +27,7 @@ export default function TicketList({ scope }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
-    status: searchParams.get("status") || "",
+    status: sanitizedStatus,
     priority: searchParams.get("priority") || "",
     search: searchParams.get("search") || "",
     page: Number(searchParams.get("page")) || 1,
@@ -70,14 +82,26 @@ export default function TicketList({ scope }) {
           onChange={(e) => updateFilter("status", e.target.value)}
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
-          <option value="">All Statuses</option>
-          <option value="OPEN">Open</option>
-          <option value="ASSIGNED">Assigned</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="WAITING_FOR_USER">Waiting for User</option>
-          <option value="RESOLVED">Resolved</option>
-          <option value="CLOSED">Closed</option>
-          <option value="REOPENED">Reopened</option>
+          {isActiveScope ? (
+            <>
+              <option value="">All Active</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="WAITING_FOR_USER">Waiting for User</option>
+              <option value="REOPENED">Reopened</option>
+            </>
+          ) : (
+            <>
+              <option value="">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="WAITING_FOR_USER">Waiting for User</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+              <option value="REOPENED">Reopened</option>
+            </>
+          )}
         </select>
         <select
           value={filters.priority}
