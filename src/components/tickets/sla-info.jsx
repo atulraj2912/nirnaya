@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 
-const slaStatusColors = {
-  ON_TRACK: "success",
-  WARNING: "warning",
-  BREACHED: "danger",
-  PAUSED: "neutral",
-  COMPLETED: "success",
+const slaStatusColorClasses = {
+  ON_TRACK: "bg-success-50 text-success-700 ring-success-600/10",
+  WARNING: "bg-warning-50 text-warning-700 ring-warning-600/10",
+  BREACHED: "bg-danger-50 text-danger-700 ring-danger-600/10",
+  PAUSED: "bg-gray-50 text-gray-700 ring-gray-600/10",
+  COMPLETED: "bg-success-50 text-success-700 ring-success-600/10",
 };
 
 const slaStatusLabels = {
@@ -33,11 +33,11 @@ function formatRemaining(ms) {
 }
 
 function SLARow({ label, status, dueAt, remainingMs, met }) {
-  const color = slaStatusColors[status] || "neutral";
+  const colorClasses = slaStatusColorClasses[status] || "bg-gray-50 text-gray-700 ring-gray-600/10";
   const statusLabel = slaStatusLabels[status] || status;
 
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-3">
       <div className="space-y-0.5">
         <p className="text-sm font-medium text-text">{label}</p>
         {dueAt && (
@@ -53,7 +53,7 @@ function SLARow({ label, status, dueAt, remainingMs, met }) {
           </span>
         )}
         <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-${color}-100 text-${color}-800`}
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${colorClasses}`}
         >
           {met ? "Met" : statusLabel}
         </span>
@@ -88,7 +88,7 @@ export default function SLAInfo({ ticketId }) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-text">SLA Status</h2>
         <p className="text-sm text-text-muted">Loading...</p>
       </div>
@@ -100,7 +100,7 @@ export default function SLAInfo({ ticketId }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <h2 className="mb-2 text-sm font-semibold text-text">SLA Status</h2>
       <p className="mb-3 text-xs text-text-muted">
         Elapsed time only — business hours not applied

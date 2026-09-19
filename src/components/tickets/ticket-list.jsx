@@ -70,17 +70,22 @@ export default function TicketList({ scope }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder="Search tickets..."
-          value={filters.search}
-          onChange={(e) => updateFilter("search", e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-        />
+        <div className="relative flex-1 min-w-[200px]">
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search tickets..."
+            value={filters.search}
+            onChange={(e) => updateFilter("search", e.target.value)}
+            className="w-full rounded-lg border border-border bg-surface pl-10 pr-3 py-2 text-sm text-text placeholder:text-text-muted transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          />
+        </div>
         <select
           value={filters.status}
           onChange={(e) => updateFilter("status", e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         >
           {isActiveScope ? (
             <>
@@ -106,7 +111,7 @@ export default function TicketList({ scope }) {
         <select
           value={filters.priority}
           onChange={(e) => updateFilter("priority", e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         >
           <option value="">All Priorities</option>
           <option value="LOW">Low</option>
@@ -133,12 +138,12 @@ export default function TicketList({ scope }) {
           {scope === "my-active" ? "No active tickets." : "No tickets found"}
         </div>
       ) : (
-        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <div className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">
           {tickets.map((ticket) => (
             <Link
               key={ticket.id}
               href={`/tickets/${ticket.id}`}
-              className="flex items-center justify-between px-6 py-4 hover:bg-surface-secondary transition-colors"
+              className="flex items-center justify-between px-6 py-4 hover:bg-surface-secondary/50 transition-colors"
             >
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -155,7 +160,12 @@ export default function TicketList({ scope }) {
               </div>
               <div className="flex items-center gap-4 text-xs text-text-muted ml-4 shrink-0">
                 {ticket.assignedAgent && (
-                  <span>→ {ticket.assignedAgent.username}</span>
+                  <span className="flex items-center gap-1">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0" />
+                    </svg>
+                    {ticket.assignedAgent.username}
+                  </span>
                 )}
                 <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
               </div>
@@ -173,14 +183,14 @@ export default function TicketList({ scope }) {
             <button
               onClick={() => updateFilter("page", filters.page - 1)}
               disabled={filters.page <= 1}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text hover:bg-surface-secondary disabled:opacity-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text hover:bg-surface-secondary disabled:opacity-50 transition-colors"
             >
               Previous
             </button>
             <button
               onClick={() => updateFilter("page", filters.page + 1)}
               disabled={filters.page >= totalPages}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text hover:bg-surface-secondary disabled:opacity-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text hover:bg-surface-secondary disabled:opacity-50 transition-colors"
             >
               Next
             </button>

@@ -50,6 +50,49 @@ describe("Admin validation schemas", () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it("requires departmentId", () => {
+      const result = createUserSchema.safeParse({
+        username: "john.doe",
+        email: "john@example.com",
+        password: "secret123",
+        role: "USER",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects invalid username characters", () => {
+      const result = createUserSchema.safeParse({
+        username: "john doe!",
+        email: "j@e.com",
+        password: "secret123",
+        role: "USER",
+        departmentId: "d1",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts USER role", () => {
+      const result = createUserSchema.safeParse({
+        username: "agent1",
+        email: "a@e.com",
+        password: "secret123",
+        role: "USER",
+        departmentId: "d1",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts AGENT role", () => {
+      const result = createUserSchema.safeParse({
+        username: "agent1",
+        email: "a@e.com",
+        password: "secret123",
+        role: "AGENT",
+        departmentId: "d1",
+      });
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("updateUserSchema", () => {
@@ -76,6 +119,31 @@ describe("Admin validation schemas", () => {
     it("requires name and code", () => {
       const result = createDepartmentSchema.safeParse({});
       expect(result.success).toBe(false);
+    });
+
+    it("rejects lowercase code", () => {
+      const result = createDepartmentSchema.safeParse({
+        name: "Engineering",
+        code: "eng",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts code with underscores and hyphens", () => {
+      const result = createDepartmentSchema.safeParse({
+        name: "QA Team",
+        code: "QA-TEAM_1",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts optional managerId", () => {
+      const result = createDepartmentSchema.safeParse({
+        name: "Engineering",
+        code: "ENG",
+        managerId: "user-1",
+      });
+      expect(result.success).toBe(true);
     });
   });
 

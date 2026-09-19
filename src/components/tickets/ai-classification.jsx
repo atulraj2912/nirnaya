@@ -3,16 +3,11 @@
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/button";
 
-/**
- * AI Classification panel for ticket detail.
- * Shows existing predictions and allows triggering new classification.
- */
-
 const PRIORITY_COLORS = {
-  LOW: "bg-gray-100 text-gray-800",
-  MEDIUM: "bg-blue-100 text-blue-800",
-  HIGH: "bg-warning-100 text-warning-800",
-  CRITICAL: "bg-danger-100 text-danger-800",
+  LOW: "bg-gray-50 text-gray-700 ring-gray-600/10",
+  MEDIUM: "bg-primary-50 text-primary-700 ring-primary-600/10",
+  HIGH: "bg-warning-50 text-warning-700 ring-warning-600/10",
+  CRITICAL: "bg-danger-50 text-danger-700 ring-danger-600/10",
 };
 
 export default function AIClassification({ ticketId, userRole }) {
@@ -68,7 +63,7 @@ export default function AIClassification({ ticketId, userRole }) {
   const canClassify = userRole === "AGENT" || userRole === "ADMIN";
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-text">AI Classification</h2>
         {canClassify && (
@@ -84,7 +79,7 @@ export default function AIClassification({ ticketId, userRole }) {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700 mb-4">{error}</div>
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200 mb-4">{error}</div>
       )}
 
       {loading ? (
@@ -102,7 +97,7 @@ export default function AIClassification({ ticketId, userRole }) {
               <span className="text-text-muted">Priority</span>
               <p className="font-medium text-text">
                 {latest.predictedPriority ? (
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[latest.predictedPriority] || ""}`}>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${PRIORITY_COLORS[latest.predictedPriority] || ""}`}>
                     {latest.predictedPriority}
                   </span>
                 ) : "—"}

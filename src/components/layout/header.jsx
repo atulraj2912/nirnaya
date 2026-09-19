@@ -16,11 +16,11 @@ function getInitials(user) {
 function getRoleBadgeClass(role) {
   switch (role) {
     case "ADMIN":
-      return "bg-danger-100 text-danger-800";
+      return "bg-danger-50 text-danger-700 ring-danger-600/10";
     case "AGENT":
-      return "bg-primary-100 text-primary-800";
+      return "bg-primary-50 text-primary-700 ring-primary-600/10";
     default:
-      return "bg-surface-secondary text-text-secondary";
+      return "bg-surface-secondary text-text-secondary ring-gray-500/10";
   }
 }
 
@@ -56,42 +56,40 @@ export default function Header({ user }) {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
-      <div className="flex items-center gap-4">
-        <h2 className="text-sm font-medium text-text-secondary">
-          Dashboard
-        </h2>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5" title={statusLabels[socketStatus]}>
+    <header className="inline-flex h-14 items-center bg-surface/80 backdrop-blur-sm px-4 gap-2 w-fit">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 rounded-full bg-surface-secondary px-2 py-1" title={statusLabels[socketStatus]}>
           <span className={`h-2 w-2 rounded-full ${statusColors[socketStatus]}`} />
           <span className="text-xs text-text-muted hidden sm:inline">{statusLabels[socketStatus]}</span>
         </div>
 
         <NotificationBell user={user} />
 
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-800">
+        <div className="h-4 w-px bg-border hidden sm:block" />
+
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-[11px] font-semibold text-primary-700 shrink-0">
             {getInitials(user)}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-text">
+          <div className="min-w-0 hidden sm:block">
+            <p className="truncate text-sm font-medium text-text leading-tight max-w-[140px]">
               {user?.username || "User"}
             </p>
-            <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${getRoleBadgeClass(user?.role)}`}>
+            <span className={`inline-block rounded-full px-1.5 py-px text-[10px] font-medium ring-1 ring-inset leading-tight ${getRoleBadgeClass(user?.role)}`}>
               {user?.role || "USER"}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            disabled={loggingOut}
-          >
-            {loggingOut ? "Signing out..." : "Sign Out"}
-          </Button>
         </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="text-xs"
+        >
+          {loggingOut ? "Signing out..." : "Sign Out"}
+        </Button>
       </div>
     </header>
   );

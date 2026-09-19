@@ -107,17 +107,20 @@ export default function Sidebar({ user }) {
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-surface">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+      <div className="flex h-16 items-center gap-3 border-b border-border px-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-bold text-white shadow-sm">
           N
         </div>
-        <span className="text-lg font-semibold text-text">NIRNAYA</span>
+        <div className="flex flex-col">
+          <span className="text-base font-semibold tracking-tight text-text">NIRNAYA</span>
+          <span className="text-[10px] font-medium text-text-muted leading-none">ITSM Platform</span>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {visibleSections.map((section) => (
-          <div key={section.label} className="mb-4">
-            <p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-text-muted">
+          <div key={section.label} className="mb-5">
+            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               {section.label}
             </p>
             <ul className="space-y-0.5">
@@ -127,13 +130,15 @@ export default function Sidebar({ user }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                         isActive
-                          ? "bg-primary-50 text-primary-700"
+                          ? "bg-primary-50 text-primary-700 shadow-sm"
                           : "text-text-secondary hover:bg-surface-secondary hover:text-text"
                       }`}
                     >
-                      <NavIcon icon={item.icon} />
+                      <span className={`transition-colors ${isActive ? "text-primary-600" : "text-text-muted group-hover:text-text-secondary"}`}>
+                        <NavIcon icon={item.icon} />
+                      </span>
                       {item.label}
                     </Link>
                   </li>
@@ -145,15 +150,15 @@ export default function Sidebar({ user }) {
       </nav>
 
       <div className="border-t border-border px-3 py-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-800">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-surface-secondary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 ring-2 ring-white">
             {getInitials(user)}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-text">
               {user?.username || "User"}
             </p>
-            <p className="truncate text-xs text-text-muted">
+            <p className="truncate text-[11px] text-text-muted">
               {user?.designation || user?.role || "Member"}
             </p>
           </div>

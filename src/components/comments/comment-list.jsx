@@ -27,7 +27,7 @@ export default function CommentList({ ticketId }) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-text">Comments</h2>
         <p className="text-sm text-text-muted">Loading comments...</p>
       </div>
@@ -35,13 +35,13 @@ export default function CommentList({ ticketId }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <h2 className="mb-4 text-sm font-semibold text-text">
         Comments {comments.length > 0 && `(${comments.length})`}
       </h2>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+        <div className="mb-4 rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">
           {error}
         </div>
       )}
@@ -58,7 +58,7 @@ export default function CommentList({ ticketId }) {
                 </span>
                 <span>{new Date(c.createdAt).toLocaleString()}</span>
                 {c.visibility === "INTERNAL" && (
-                  <span className="rounded bg-warning-100 px-1.5 py-0.5 text-warning-800">
+                  <span className="rounded-md bg-warning-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning-700 ring-1 ring-inset ring-warning-200">
                     Internal
                   </span>
                 )}

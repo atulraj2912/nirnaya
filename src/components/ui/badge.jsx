@@ -1,9 +1,9 @@
 const colorMap = {
-  primary: "bg-primary-100 text-primary-800",
-  success: "bg-success-100 text-success-800",
-  warning: "bg-warning-100 text-warning-800",
-  danger: "bg-danger-100 text-danger-800",
-  neutral: "bg-gray-100 text-gray-800",
+  primary: "bg-primary-50 text-primary-700 ring-primary-600/10",
+  success: "bg-success-50 text-success-700 ring-success-600/10",
+  warning: "bg-warning-50 text-warning-700 ring-warning-600/10",
+  danger: "bg-danger-50 text-danger-700 ring-danger-600/10",
+  neutral: "bg-surface-secondary text-text-secondary ring-gray-500/10",
 };
 
 const sizeMap = {
@@ -21,7 +21,7 @@ export default function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full font-medium ${colorMap[variant]} ${sizeMap[size]} ${className}`}
+      className={`inline-flex items-center rounded-full font-medium ring-1 ring-inset ${colorMap[variant]} ${sizeMap[size]} ${className}`}
       {...props}
     >
       {children}

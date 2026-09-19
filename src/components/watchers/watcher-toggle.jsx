@@ -69,7 +69,7 @@ export default function WatcherToggle({ ticketId, currentUser }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-text">
@@ -93,7 +93,7 @@ export default function WatcherToggle({ ticketId, currentUser }) {
         <div className="mt-4 space-y-2">
           <button
             onClick={() => setShowList(!showList)}
-            className="text-xs text-primary-600 hover:text-primary-700"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700"
           >
             {showList ? "Hide" : "Show"} watchers
           </button>
@@ -113,7 +113,7 @@ export default function WatcherToggle({ ticketId, currentUser }) {
                     </span>
                   )}
                   {w.userId === currentUser?.id && (
-                    <span className="text-xs text-primary-600">(you)</span>
+                    <span className="text-xs font-medium text-primary-600">(you)</span>
                   )}
                 </div>
               ))}

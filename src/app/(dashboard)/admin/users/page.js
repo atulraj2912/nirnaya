@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">User Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">User Management</h1>
           <p className="text-sm text-text-secondary">
             Manage organization users, roles, and access.
           </p>
@@ -157,9 +157,9 @@ export default function AdminUsersPage() {
                       <td className="py-2 pr-4 text-text-secondary">{u.email}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          u.role === "ADMIN" ? "bg-danger-50 text-danger-700" :
-                          u.role === "AGENT" ? "bg-warning-50 text-warning-700" :
-                          "bg-surface-secondary text-text-secondary"
+                          u.role === "ADMIN" ? "bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-600/10" :
+                          u.role === "AGENT" ? "bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-600/10" :
+                          "bg-surface-secondary text-text-secondary ring-1 ring-inset ring-gray-500/10"
                         }`}>
                           {u.role}
                         </span>
@@ -196,6 +196,25 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {showCreate && (
+        <UserModal
+          title="Add User"
+          onClose={() => setShowCreate(false)}
+          onSubmit={handleCreate}
+          departments={departments}
+        />
+      )}
+
+      {editUser && (
+        <UserModal
+          title="Edit User"
+          initialData={editUser}
+          onClose={() => setEditUser(null)}
+          onSubmit={handleUpdate}
+          departments={departments}
+        />
+      )}
     </div>
   );
 }

@@ -62,7 +62,7 @@ export default function AdminCategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Categories</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Categories</h1>
           <p className="text-sm text-text-secondary">Manage ticket classification categories.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>Add Category</Button>
@@ -92,7 +92,7 @@ export default function AdminCategoriesPage() {
                       <td className="py-2 pr-4 text-text-secondary">{c._count?.tickets || 0}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.isActive ? "bg-success-50 text-success-700" : "bg-surface-secondary text-text-muted"
+                          c.isActive ? "bg-success-50 text-success-700 ring-1 ring-inset ring-success-600/10" : "bg-surface-secondary text-text-muted ring-1 ring-inset ring-gray-500/10"
                         }`}>
                           {c.isActive ? "Active" : "Inactive"}
                         </span>

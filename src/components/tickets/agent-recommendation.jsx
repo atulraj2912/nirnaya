@@ -3,14 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Button from "@/components/ui/button";
 
-/**
- * Agent Recommendation panel for ticket detail.
- * Shows ranked agent recommendations with scoring breakdown.
- * Per spec §18: "Recommendation is NOT the same thing as assignment."
- *
- * Role-gated: only AGENT/ADMIN see the panel.
- */
-
 function ScoreBar({ score }) {
   const width = Math.min(100, Math.max(0, score));
   let color = "bg-success-500";
@@ -19,7 +11,7 @@ function ScoreBar({ score }) {
 
   return (
     <div className="w-full bg-surface-secondary rounded-full h-2">
-      <div className={`${color} h-2 rounded-full`} style={{ width: `${width}%` }} />
+      <div className={`${color} h-2 rounded-full transition-all duration-500`} style={{ width: `${width}%` }} />
     </div>
   );
 }
@@ -27,12 +19,12 @@ function ScoreBar({ score }) {
 function ConfidenceBadge({ confidence }) {
   if (confidence == null) return null;
   const pct = Math.round(confidence * 100);
-  let variant = "bg-success-100 text-success-800";
-  if (pct < 60) variant = "bg-danger-100 text-danger-800";
-  else if (pct < 75) variant = "bg-warning-100 text-warning-800";
+  let classes = "bg-success-50 text-success-700 ring-success-600/10";
+  if (pct < 60) classes = "bg-danger-50 text-danger-700 ring-danger-600/10";
+  else if (pct < 75) classes = "bg-warning-50 text-warning-700 ring-warning-600/10";
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${variant}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${classes}`}>
       {pct}% confidence
     </span>
   );
@@ -96,7 +88,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
   const totalEligible = data?.totalEligibleAgents || 0;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-text">AI Agent Recommendations</h2>
         <Button
@@ -110,7 +102,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700 mb-4">{error}</div>
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200 mb-4">{error}</div>
       )}
 
       {loading ? (
@@ -136,7 +128,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
               className={`rounded-lg border p-4 ${
                 rec.rank === 1
                   ? "border-primary-200 bg-primary-50/30"
-                  : "border-border bg-surface-secondary"
+                  : "border-border bg-surface-secondary/50"
               }`}
             >
               <div className="flex items-start justify-between mb-2">
@@ -146,7 +138,7 @@ export default function AgentRecommendation({ ticketId, userRole }) {
                       {rec.username}
                     </span>
                     {rec.rank === 1 && (
-                      <span className="rounded bg-primary-100 px-1.5 py-0.5 text-xs font-medium text-primary-800">
+                      <span className="rounded-md bg-primary-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-700">
                         TOP PICK
                       </span>
                     )}

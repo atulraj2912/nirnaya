@@ -97,7 +97,7 @@ export default function TicketForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700">{error}</div>
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">{error}</div>
       )}
 
       <Input
@@ -115,7 +115,7 @@ export default function TicketForm() {
           onChange={(e) => updateField("description", e.target.value)}
           placeholder="Provide details about your request..."
           rows={6}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           required
         />
       </div>
@@ -126,7 +126,7 @@ export default function TicketForm() {
           <select
             value={form.priority}
             onChange={(e) => updateField("priority", e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           >
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
@@ -140,7 +140,7 @@ export default function TicketForm() {
           <select
             value={form.type}
             onChange={(e) => updateField("type", e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           >
             <option value="INCIDENT">Incident</option>
             <option value="SERVICE_REQUEST">Service Request</option>
@@ -154,7 +154,7 @@ export default function TicketForm() {
           <select
             value={form.departmentId}
             onChange={(e) => updateField("departmentId", e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             required
           >
             <option value="">Select department</option>
@@ -171,7 +171,7 @@ export default function TicketForm() {
           <select
             value={form.categoryId}
             onChange={(e) => updateField("categoryId", e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           >
             <option value="">Select category</option>
             {filteredCategories.map((c) => (
@@ -192,10 +192,10 @@ export default function TicketForm() {
                 key={tag.id}
                 type="button"
                 onClick={() => toggleTag(tag.id)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
                   selectedTags.includes(tag.id)
-                    ? "bg-primary-600 text-white"
-                    : "bg-surface-secondary text-text-secondary hover:bg-border"
+                    ? "bg-primary-600 text-white shadow-sm"
+                    : "bg-surface-secondary text-text-secondary hover:bg-border ring-1 ring-inset ring-border"
                 }`}
               >
                 {tag.name}
@@ -205,7 +205,7 @@ export default function TicketForm() {
         </div>
       )}
 
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 pt-2">
         <Button
           type="button"
           variant="secondary"

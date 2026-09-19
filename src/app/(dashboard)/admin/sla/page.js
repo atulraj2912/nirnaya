@@ -58,7 +58,7 @@ export default function AdminSlaPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">SLA Configuration</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">SLA Configuration</h1>
           <p className="text-sm text-text-secondary">
             Configure priority-based SLA response and resolution targets (elapsed time only).
           </p>
@@ -88,10 +88,10 @@ export default function AdminSlaPage() {
                     <tr key={c.id} className="border-b border-border last:border-0">
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.priority === "CRITICAL" ? "bg-danger-50 text-danger-700" :
-                          c.priority === "HIGH" ? "bg-warning-50 text-warning-700" :
-                          c.priority === "MEDIUM" ? "bg-primary-50 text-primary-700" :
-                          "bg-surface-secondary text-text-secondary"
+                          c.priority === "CRITICAL" ? "bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-600/10" :
+                          c.priority === "HIGH" ? "bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-600/10" :
+                          c.priority === "MEDIUM" ? "bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/10" :
+                          "bg-surface-secondary text-text-secondary ring-1 ring-inset ring-gray-500/10"
                         }`}>
                           {c.priority}
                         </span>

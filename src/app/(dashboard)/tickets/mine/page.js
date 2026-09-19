@@ -9,7 +9,7 @@ export default function MyTicketsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text">My Active Tickets</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text">My Active Tickets</h1>
         <p className="text-sm text-text-secondary">
           Tickets you are currently working on.
         </p>

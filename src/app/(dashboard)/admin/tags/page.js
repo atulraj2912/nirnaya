@@ -48,7 +48,7 @@ export default function AdminTagsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Tags</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Tags</h1>
           <p className="text-sm text-text-secondary">Manage ticket tags for flexible classification.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>Add Tag</Button>

@@ -32,6 +32,18 @@ export default function NotificationBell({ user }) {
     };
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
   async function fetchNotifications() {
     setLoading(true);
     setError("");
@@ -96,7 +108,7 @@ export default function NotificationBell({ user }) {
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-secondary"
+        className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-secondary hover:text-text transition-colors"
         aria-label="Notifications"
         onClick={handleToggle}
       >
@@ -114,14 +126,14 @@ export default function NotificationBell({ user }) {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white shadow-sm">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-surface shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-surface shadow-xl">
           <NotificationList
             notifications={notifications}
             loading={loading}

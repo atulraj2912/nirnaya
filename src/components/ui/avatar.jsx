@@ -27,7 +27,7 @@ export default function Avatar({
       <img
         src={src}
         alt={alt || name || "Avatar"}
-        className={`rounded-full object-cover ${sizeMap[size]} ${className}`}
+        className={`rounded-full object-cover ring-2 ring-white ${sizeMap[size]} ${className}`}
         {...props}
       />
     );
@@ -35,7 +35,7 @@ export default function Avatar({
 
   return (
     <div
-      className={`inline-flex items-center justify-center rounded-full bg-primary-100 font-medium text-primary-800 ${sizeMap[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full bg-primary-100 font-medium text-primary-700 ring-2 ring-white ${sizeMap[size]} ${className}`}
       {...props}
     >
       {getInitials(name)}

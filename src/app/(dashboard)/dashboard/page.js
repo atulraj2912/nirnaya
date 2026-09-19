@@ -52,6 +52,22 @@ async function fetchDashboardData(setStats, setError, setLoading) {
   }
 }
 
+function StatCard({ label, value, icon, accent }) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-4">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${accent}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm font-medium text-text-muted">{label}</p>
+          <p className="text-2xl font-bold text-text">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,37 +114,53 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text">Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text">Dashboard</h1>
         <p className="text-sm text-text-secondary">
           Overview of your IT service management.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent>
-            <p className="text-sm font-medium text-text-muted">Open Tickets</p>
-            <p className="mt-1 text-3xl font-bold text-text">{stats?.openTickets ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm font-medium text-text-muted">In Progress</p>
-            <p className="mt-1 text-3xl font-bold text-text">{stats?.inProgressTickets ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm font-medium text-text-muted">Resolved Today</p>
-            <p className="mt-1 text-3xl font-bold text-text">{stats?.resolvedToday ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm font-medium text-text-muted">SLA Breached</p>
-            <p className="mt-1 text-3xl font-bold text-danger-600">{stats?.slaBreached ?? 0}</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="Open Tickets"
+          value={stats?.openTickets ?? 0}
+          accent="bg-primary-50"
+          icon={
+            <svg className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="In Progress"
+          value={stats?.inProgressTickets ?? 0}
+          accent="bg-warning-50"
+          icon={
+            <svg className="h-6 w-6 text-warning-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Resolved Today"
+          value={stats?.resolvedToday ?? 0}
+          accent="bg-success-50"
+          icon={
+            <svg className="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="SLA Breached"
+          value={stats?.slaBreached ?? 0}
+          accent="bg-danger-50"
+          icon={
+            <svg className="h-6 w-6 text-danger-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+          }
+        />
       </div>
 
       {stats?.recentTickets?.length > 0 && (

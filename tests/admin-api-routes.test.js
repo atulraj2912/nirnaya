@@ -35,6 +35,13 @@ vi.mock("@/lib/services/department-service", () => ({
   },
 }));
 
+vi.mock("@/lib/validation/admin", () => ({
+  createUserSchema: { safeParse: vi.fn() },
+  updateUserSchema: { safeParse: vi.fn() },
+  createDepartmentSchema: { safeParse: vi.fn() },
+  updateDepartmentSchema: { safeParse: vi.fn() },
+}));
+
 vi.mock("@/lib/services/category-admin-service", () => ({
   listCategories: vi.fn(),
   createCategory: vi.fn(),
@@ -83,7 +90,7 @@ vi.mock("@/lib/db/prisma", () => ({
 import { requireAdmin } from "@/lib/authz";
 import { listUsers, createUser, UserAdminError } from "@/lib/services/user-admin-service";
 import { getDashboardStats } from "@/lib/services/dashboard-service";
-import { listDepartments } from "@/lib/services/department-service";
+import { listDepartments, createDepartment, DepartmentError } from "@/lib/services/department-service";
 import { listCategories } from "@/lib/services/category-admin-service";
 import { listTags } from "@/lib/services/tag-admin-service";
 import { listSLAConfigs } from "@/lib/services/sla-config-service";
@@ -161,6 +168,34 @@ describe("Admin API routes - users", () => {
     const res = await POST(req);
     expect(res.status).toBe(201);
   });
+
+  it("POST returns 409 on duplicate username", async () => {
+    requireAdmin.mockResolvedValue({ user: mockAdmin });
+    createUser.mockRejectedValue(new UserAdminError("Username already exists", 409));
+
+    const { POST } = await import("@/app/api/admin/users/route");
+    const req = makeRequest("http://localhost/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "dup", email: "d@e.com", password: "password123", role: "USER" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(409);
+  });
+
+  it("POST returns 500 on unexpected error", async () => {
+    requireAdmin.mockResolvedValue({ user: mockAdmin });
+    createUser.mockRejectedValue(new Error("db crash"));
+
+    const { POST } = await import("@/app/api/admin/users/route");
+    const req = makeRequest("http://localhost/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "x", email: "x@e.com", password: "password123", role: "USER" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(500);
+  });
 });
 
 describe("Admin API routes - dashboard", () => {
@@ -198,6 +233,36 @@ describe("Admin API routes - departments", () => {
     const data = await res.json();
 
     expect(data.departments).toHaveLength(0);
+  });
+
+  it("POST creates a new department", async () => {
+    requireAdmin.mockResolvedValue({ user: mockAdmin });
+    createDepartment.mockResolvedValue({ id: "new-dept", name: "Engineering", code: "ENG" });
+
+    const { POST } = await import("@/app/api/admin/departments/route");
+    const req = makeRequest("http://localhost/api/admin/departments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Engineering", code: "ENG", userId: "mgr-1" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.department.name).toBe("Engineering");
+  });
+
+  it("POST returns error on duplicate department", async () => {
+    requireAdmin.mockResolvedValue({ user: mockAdmin });
+    createDepartment.mockRejectedValue(new DepartmentError("Department name already exists", 409));
+
+    const { POST } = await import("@/app/api/admin/departments/route");
+    const req = makeRequest("http://localhost/api/admin/departments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Engineering", code: "ENG", userId: "mgr-1" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(409);
   });
 });
 

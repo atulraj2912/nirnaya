@@ -3,17 +3,17 @@
 import { useRouter } from "next/navigation";
 
 const typeIcons = {
-  TICKET_CREATED: "bg-primary-100 text-primary-600",
-  TICKET_ASSIGNED: "bg-success-100 text-success-600",
-  TICKET_REASSIGNED: "bg-success-100 text-success-600",
-  TICKET_STATUS_CHANGED: "bg-warning-100 text-warning-600",
-  TICKET_PRIORITY_CHANGED: "bg-warning-100 text-warning-600",
-  COMMENT_ADDED: "bg-primary-100 text-primary-600",
+  TICKET_CREATED: "bg-primary-50 text-primary-600",
+  TICKET_ASSIGNED: "bg-success-50 text-success-600",
+  TICKET_REASSIGNED: "bg-success-50 text-success-600",
+  TICKET_STATUS_CHANGED: "bg-warning-50 text-warning-600",
+  TICKET_PRIORITY_CHANGED: "bg-warning-50 text-warning-600",
+  COMMENT_ADDED: "bg-primary-50 text-primary-600",
   WATCHER_ADDED: "bg-surface-secondary text-text-secondary",
   WATCHER_REMOVED: "bg-surface-secondary text-text-secondary",
-  SLA_WARNING: "bg-warning-100 text-warning-600",
-  SLA_BREACHED: "bg-danger-100 text-danger-600",
-  ASSIGNMENT_ACCEPTED: "bg-success-100 text-success-600",
+  SLA_WARNING: "bg-warning-50 text-warning-600",
+  SLA_BREACHED: "bg-danger-50 text-danger-600",
+  ASSIGNMENT_ACCEPTED: "bg-success-50 text-success-600",
 };
 
 const typeShortLabels = {
@@ -71,7 +71,7 @@ export default function NotificationList({
         {notifications.some((n) => !n.isRead) && (
           <button
             onClick={onMarkAllRead}
-            className="text-xs text-primary-600 hover:text-primary-700"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700"
           >
             Mark all read
           </button>
@@ -89,7 +89,7 @@ export default function NotificationList({
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="mt-2 text-xs text-primary-600 hover:text-primary-700"
+                className="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700"
               >
                 Retry
               </button>
@@ -118,7 +118,7 @@ export default function NotificationList({
               <button
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-secondary ${
+                className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-secondary/50 transition-colors ${
                   !notif.isRead ? "bg-primary-50/30" : ""
                 }`}
               >

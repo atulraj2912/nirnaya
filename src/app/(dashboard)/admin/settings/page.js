@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text">Organization Settings</h1>
         <p className="text-sm text-text-muted">Loading...</p>
       </div>
     );
@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text">Organization Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text">Organization Settings</h1>
         <p className="text-sm text-text-secondary">
           Configure your organization&apos;s general settings.
         </p>

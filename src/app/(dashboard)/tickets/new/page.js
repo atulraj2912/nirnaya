@@ -8,7 +8,7 @@ export default function NewTicketPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text">Create Ticket</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text">Create Ticket</h1>
         <p className="text-sm text-text-secondary">
           Submit a new IT support request.
         </p>

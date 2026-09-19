@@ -30,7 +30,7 @@ export default function AdminDepartmentsPage() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/admin/users?limit=100&role=ADMIN");
+      const res = await fetch("/api/admin/users?limit=100");
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users);
@@ -65,7 +65,7 @@ export default function AdminDepartmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Departments</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Departments</h1>
           <p className="text-sm text-text-secondary">Manage organizational departments.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>Add Department</Button>
@@ -101,7 +101,7 @@ export default function AdminDepartmentsPage() {
                       <td className="py-2 pr-4 text-text-secondary">{d._count?.tickets || 0}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          d.isActive ? "bg-success-50 text-success-700" : "bg-surface-secondary text-text-muted"
+                          d.isActive ? "bg-success-50 text-success-700 ring-1 ring-inset ring-success-600/10" : "bg-surface-secondary text-text-muted ring-1 ring-inset ring-gray-500/10"
                         }`}>
                           {d.isActive ? "Active" : "Inactive"}
                         </span>
@@ -117,6 +117,25 @@ export default function AdminDepartmentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {showCreate && (
+        <DeptModal
+          title="Add Department"
+          onClose={() => setShowCreate(false)}
+          onSubmit={handleCreate}
+          users={users}
+        />
+      )}
+
+      {editDept && (
+        <DeptModal
+          title="Edit Department"
+          initialData={editDept}
+          onClose={() => setEditDept(null)}
+          onSubmit={handleUpdate}
+          users={users}
+        />
+      )}
     </div>
   );
 }
@@ -158,7 +177,7 @@ function DeptModal({ title, initialData, onClose, onSubmit, users }) {
             <select
               value={form.managerId}
               onChange={set("managerId")}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             >
               <option value="">No manager</option>
               {users.map((u) => (

@@ -27,7 +27,6 @@ const serverEnvSchema = z.object({
 
   // AI — optional, validated from Phase 5
   AI_PROVIDER: z.string().optional(),
-  AI_PROVIDER_API_KEY: z.string().optional(),
   AI_API_KEY: z.string().optional(),
   AI_API_BASE_URL: z.string().optional(),
   AI_MODEL: z.string().optional(),

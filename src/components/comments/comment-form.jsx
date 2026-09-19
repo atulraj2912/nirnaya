@@ -46,7 +46,7 @@ export default function CommentForm({ ticketId, userRole, onCommentAdded }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">
           {error}
         </div>
       )}
@@ -56,7 +56,7 @@ export default function CommentForm({ ticketId, userRole, onCommentAdded }) {
         onChange={(e) => setContent(e.target.value)}
         placeholder="Write a comment..."
         rows={3}
-        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
       />
 
       <div className="flex items-center justify-between">

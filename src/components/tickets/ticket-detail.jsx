@@ -158,10 +158,10 @@ export default function TicketDetail({ ticketId }) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700">{error}</div>
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">{error}</div>
       )}
 
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ export default function TicketDetail({ ticketId }) {
             {ticket.ticketTags.map((tt) => (
               <span
                 key={tt.tag.id}
-                className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs text-text-secondary"
+                className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-text-secondary ring-1 ring-inset ring-border"
               >
                 {tt.tag.name}
               </span>
@@ -214,7 +214,7 @@ export default function TicketDetail({ ticketId }) {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-text">Actions</h2>
 
         <div className="flex flex-wrap gap-3">
@@ -238,7 +238,7 @@ export default function TicketDetail({ ticketId }) {
               <select
                 value={assignAgentId}
                 onChange={(e) => setAssignAgentId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 <option value="">Select agent</option>
                 {agents.map((a) => (
@@ -266,7 +266,7 @@ export default function TicketDetail({ ticketId }) {
       <AgentRecommendation ticketId={ticketId} userRole={userRole} />
 
       {ticket.assignmentHistory?.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-6">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-text">Assignment History</h2>
           <div className="space-y-3">
             {ticket.assignmentHistory.map((h) => (
@@ -286,7 +286,7 @@ export default function TicketDetail({ ticketId }) {
 
       <WatcherToggle ticketId={ticketId} currentUser={currentUser} />
 
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-text">Add Comment</h2>
         <CommentForm
           ticketId={ticketId}
