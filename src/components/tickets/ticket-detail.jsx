@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
 import Button from "@/components/ui/button";
@@ -11,6 +11,13 @@ import CommentList from "@/components/comments/comment-list";
 import CommentForm from "@/components/comments/comment-form";
 import WatcherToggle from "@/components/watchers/watcher-toggle";
 import ActivityTimeline from "@/components/activity/activity-timeline";
+import {
+  useTicket,
+  useAgents,
+  useCurrentUser,
+  useTransitionStatus,
+  useAssignTicket,
+} from "@/hooks/use-ticket-queries";
 
 const ALLOWED_TRANSITIONS = {
   OPEN: ["ASSIGNED"],
@@ -33,118 +40,66 @@ const STATUS_LABELS = {
 
 export default function TicketDetail({ ticketId }) {
   const router = useRouter();
-  const [ticket, setTicket] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-  const [agents, setAgents] = useState([]);
   const [assignAgentId, setAssignAgentId] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
   const [commentsKey, setCommentsKey] = useState(0);
+
+  const { data: ticketData, isLoading, error: queryError } = useTicket(ticketId);
+  const ticket = ticketData?.ticket ?? null;
+
+  const { data: agentsData } = useAgents();
+  const agents = agentsData?.agents ?? [];
+
+  const { data: userData } = useCurrentUser();
+  const currentUser = userData?.user ?? null;
   const userRole = currentUser?.role ?? null;
 
-  useEffect(() => {
-    async function fetchTicket() {
-      try {
-        const res = await fetch(`/api/tickets/${ticketId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setTicket(data.ticket);
-        } else {
-          setError("Ticket not found");
-        }
-      } catch {
-        setError("Network error. Please check your connection.");
-      }
-      setLoading(false);
-    }
-    fetchTicket();
-  }, [ticketId]);
+  const transitionMutation = useTransitionStatus(ticketId);
+  const assignMutation = useAssignTicket(ticketId);
 
-  useEffect(() => {
-    async function fetchAgents() {
-      const res = await fetch("/api/users");
-      if (res.ok) {
-        const data = await res.json();
-        setAgents(data.agents);
-      }
-    }
-    if (userRole === "AGENT" || userRole === "ADMIN") {
-      fetchAgents();
-    }
-  }, [userRole]);
+  const actionLoading = transitionMutation.isPending || assignMutation.isPending;
 
-  useEffect(() => {
-    async function fetchCurrentUser() {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setCurrentUser(data.user);
-      }
+  function getErrorMessage() {
+    if (queryError) {
+      if (queryError.message === "NOT_FOUND") return "Ticket not found";
+      if (queryError.message === "UNAUTHORIZED") return "You do not have access to this ticket";
+      if (queryError.message === "SERVER_ERROR") return "Failed to load ticket";
+      return "Network error. Please check your connection.";
     }
-    fetchCurrentUser();
-  }, []);
+    if (error) return error;
+    return "";
+  }
 
   async function handleStatusChange(newStatus) {
-    setActionLoading(true);
+    setError("");
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTicket(data.ticket);
-      } else {
-        const data = await res.json();
-        setError(data.error || "Failed to update status");
-      }
-    } finally {
-      setActionLoading(false);
+      await transitionMutation.mutateAsync(newStatus);
+    } catch (err) {
+      setError(err.message || "Failed to update status");
     }
   }
 
   async function handleAssign() {
     if (!assignAgentId) return;
-    setActionLoading(true);
+    setError("");
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/assign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: assignAgentId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTicket(data.ticket);
-        setAssignAgentId("");
-      } else {
-        const data = await res.json();
-        setError(data.error || "Failed to assign ticket");
-      }
-    } finally {
-      setActionLoading(false);
+      await assignMutation.mutateAsync({ agentId: assignAgentId });
+      setAssignAgentId("");
+    } catch (err) {
+      setError(err.message || "Failed to assign ticket");
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex justify-center py-12 text-text-muted">Loading ticket...</div>;
   }
 
   if (!ticket) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-        <p className="text-sm">{error || "Ticket not found"}</p>
+        <p className="text-sm">{getErrorMessage() || "Ticket not found"}</p>
         <button
-          onClick={() => {
-            setError("");
-            setLoading(true);
-            fetch(`/api/tickets/${ticketId}`).then((res) => {
-              if (res.ok) res.json().then((d) => setTicket(d.ticket));
-              else setError("Ticket not found");
-              setLoading(false);
-            }).catch(() => { setError("Network error"); setLoading(false); });
-          }}
+          onClick={() => router.refresh()}
           className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700"
         >
           Retry
@@ -154,11 +109,12 @@ export default function TicketDetail({ ticketId }) {
   }
 
   const transitions = ALLOWED_TRANSITIONS[ticket.status] || [];
+  const displayError = getErrorMessage();
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">{error}</div>
+      {displayError && (
+        <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">{displayError}</div>
       )}
 
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">

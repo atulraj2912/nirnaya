@@ -327,6 +327,7 @@ model Notification {
   @@index([organizationId])
   @@index([ticketId])
   @@index([isRead])
+  @@index([recipientId, isRead]) // composite for unread-count and unread-list queries
   @@map("notifications")
 }
 
@@ -372,6 +373,7 @@ model TicketAssignmentHistory {
   @@index([ticketId])
   @@index([assignedToId])
   @@index([assignedById])
+  @@index([ticketId, createdAt]) // composite for chronological activity timeline queries
   @@map("ticket_assignment_history")
 }
 

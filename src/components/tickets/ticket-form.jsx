@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
+import {
+  useDepartments,
+  useCategories,
+  useTags,
+  useCreateTicket,
+} from "@/hooks/use-ticket-queries";
 
 export default function TicketForm() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [departments, setDepartments] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
 
   const [form, setForm] = useState({
@@ -23,28 +25,14 @@ export default function TicketForm() {
     categoryId: "",
   });
 
-  useEffect(() => {
-    async function fetchDropdowns() {
-      const [deptRes, catRes, tagRes] = await Promise.all([
-        fetch("/api/departments"),
-        fetch("/api/categories"),
-        fetch("/api/tags"),
-      ]);
-      if (deptRes.ok) {
-        const d = await deptRes.json();
-        setDepartments(d.departments);
-      }
-      if (catRes.ok) {
-        const c = await catRes.json();
-        setCategories(c.categories);
-      }
-      if (tagRes.ok) {
-        const t = await tagRes.json();
-        setTags(t.tags);
-      }
-    }
-    fetchDropdowns();
-  }, []);
+  const { data: deptData } = useDepartments();
+  const { data: catData } = useCategories();
+  const { data: tagData } = useTags();
+  const createTicket = useCreateTicket();
+
+  const departments = deptData?.departments ?? [];
+  const categories = catData?.categories ?? [];
+  const tags = tagData?.tags ?? [];
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -65,37 +53,22 @@ export default function TicketForm() {
       return;
     }
 
-    setLoading(true);
     try {
-      const res = await fetch("/api/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          categoryId: form.categoryId || null,
-          tagIds: selectedTags,
-        }),
+      const data = await createTicket.mutateAsync({
+        ...form,
+        categoryId: form.categoryId || null,
+        tagIds: selectedTags,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to create ticket");
-        return;
-      }
-
       router.push(`/tickets/${data.ticket.id}`);
-    } catch {
-      setError("An unexpected error occurred");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred");
     }
   }
 
-  const filteredCategories = categories;
+  const loading = createTicket.isPending;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {error && (
         <div className="rounded-lg bg-danger-50 p-3 text-sm font-medium text-danger-700 ring-1 ring-inset ring-danger-200">{error}</div>
       )}
@@ -105,6 +78,7 @@ export default function TicketForm() {
         value={form.title}
         onChange={(e) => updateField("title", e.target.value)}
         placeholder="Brief description of the issue"
+        maxLength={200}
         required
       />
 
@@ -115,6 +89,7 @@ export default function TicketForm() {
           onChange={(e) => updateField("description", e.target.value)}
           placeholder="Provide details about your request..."
           rows={6}
+          maxLength={10000}
           className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           required
         />
@@ -174,7 +149,7 @@ export default function TicketForm() {
             className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           >
             <option value="">Select category</option>
-            {filteredCategories.map((c) => (
+            {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

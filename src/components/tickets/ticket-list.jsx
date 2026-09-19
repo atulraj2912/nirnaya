@@ -4,10 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { StatusBadge, PriorityBadge } from "./status-badge";
+import { useTicketList } from "@/hooks/use-ticket-queries";
 
 const ACTIVE_STATUSES = ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED"];
 
 const ALL_STATUSES = ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "CLOSED", "REOPENED"];
+
+function useDebouncedValue(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
 
 export default function TicketList({ scope }) {
   const router = useRouter();
@@ -21,11 +31,6 @@ export default function TicketList({ scope }) {
     ? initialStatus
     : "";
 
-  const [tickets, setTickets] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     status: sanitizedStatus,
     priority: searchParams.get("priority") || "",
@@ -33,39 +38,33 @@ export default function TicketList({ scope }) {
     page: Number(searchParams.get("page")) || 1,
   });
 
-  useEffect(() => {
-    async function fetchTickets() {
-      setLoading(true);
-      setError("");
-      const params = new URLSearchParams();
-      if (scope) params.set("scope", scope);
-      if (filters.status) params.set("status", filters.status);
-      if (filters.priority) params.set("priority", filters.priority);
-      if (filters.search) params.set("search", filters.search);
-      params.set("page", String(filters.page));
-      params.set("limit", "20");
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
 
-      try {
-        const res = await fetch(`/api/tickets?${params}`);
-        if (res.ok) {
-          const data = await res.json();
-          setTickets(data.tickets);
-          setTotal(data.total);
-          setTotalPages(data.totalPages);
-        } else {
-          setError("Failed to load tickets. Please try again.");
-        }
-      } catch {
-        setError("Network error. Please check your connection.");
-      }
-      setLoading(false);
-    }
-    fetchTickets();
-  }, [filters, scope]);
+  const { data, isLoading, error } = useTicketList({
+    scope,
+    status: filters.status,
+    priority: filters.priority,
+    search: debouncedSearch,
+    page: filters.page,
+  });
+
+  const tickets = data?.tickets ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   function updateFilter(key, value) {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key !== "page" ? { page: 1 } : {}),
+    }));
   }
+
+  const errorMessage = error
+    ? error.message === "Failed to load tickets"
+      ? "Failed to load tickets. Please try again."
+      : "Network error. Please check your connection."
+    : "";
 
   return (
     <div className="space-y-4">
@@ -121,11 +120,11 @@ export default function TicketList({ scope }) {
         </select>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12 text-text-muted">Loading tickets...</div>
-      ) : error ? (
+      ) : errorMessage ? (
         <div className="rounded-xl border border-danger-200 bg-danger-50 p-6 text-center">
-          <p className="text-sm text-danger-700">{error}</p>
+          <p className="text-sm text-danger-700">{errorMessage}</p>
           <button
             onClick={() => setFilters((prev) => ({ ...prev }))}
             className="mt-3 text-sm font-medium text-danger-600 hover:text-danger-800"

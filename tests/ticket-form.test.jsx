@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, within, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
@@ -33,6 +34,11 @@ beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch);
 });
 
+function renderWithProviders(ui) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 300_000 } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 import TicketForm from "@/components/tickets/ticket-form";
 
 function getSelects() {
@@ -42,7 +48,7 @@ function getSelects() {
 
 describe("TicketForm - category and department independence", () => {
   it("renders all categories before any department is selected", async () => {
-    render(<TicketForm />);
+    renderWithProviders(<TicketForm />);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Software" })).toBeInTheDocument();
@@ -55,7 +61,7 @@ describe("TicketForm - category and department independence", () => {
   });
 
   it("does not empty category options when a department is selected", async () => {
-    render(<TicketForm />);
+    renderWithProviders(<TicketForm />);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();
@@ -72,7 +78,7 @@ describe("TicketForm - category and department independence", () => {
   });
 
   it("keeps category selected after department changes", async () => {
-    render(<TicketForm />);
+    renderWithProviders(<TicketForm />);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Software" })).toBeInTheDocument();
@@ -86,7 +92,7 @@ describe("TicketForm - category and department independence", () => {
   });
 
   it("keeps all categories available when switching departments", async () => {
-    render(<TicketForm />);
+    renderWithProviders(<TicketForm />);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "Engineering" })).toBeInTheDocument();

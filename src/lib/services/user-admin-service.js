@@ -69,6 +69,7 @@ export async function getUser(userId, organizationId) {
       username: true,
       email: true,
       employeeId: true,
+      organizationId: true,
       role: true,
       status: true,
       designation: true,

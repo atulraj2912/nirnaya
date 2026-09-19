@@ -7,6 +7,33 @@ Newest entries at the top.
 
 ---
 
+## D-018 — Part 3: Auth/RBAC audit findings and refresh token endpoint
+
+**Context:** Comprehensive security audit of authentication, sessions, and
+RBAC (spec §25-26, §7). Two issues found; no remaining vulnerabilities.
+
+**Decision:**
+
+1. **`getUser()` bug fixed.** The `select` statement in
+   `src/lib/services/user-admin-service.js:getUser()` omitted
+   `organizationId`, causing the cross-org check to always fail.
+   Added `organizationId: true` to the select. The function was not
+   called from any route but is now correct for future use.
+
+2. **Refresh token endpoint created.** `POST /api/auth/refresh`
+   consumes the `nirnaya_refresh_token` cookie, verifies the JWT
+   against the separate `JWT_REFRESH_SECRET`, checks ACTIVE status
+   from DB, and issues a new access token. No refresh token rotation
+   in V1 (spec §25 says ~7 days, does not mandate rotation).
+
+3. **V1 deliberate decisions documented here:**
+   - No refresh token rotation (tokens expire after 7 days)
+   - No single-use refresh tokens (stateless JWT approach)
+   - No token blocklist (revocation via status change to INACTIVE)
+   - No rate limiting on login/refresh (should be added pre-production)
+
+---
+
 ## D-017 — Real AI provider integration (Phase 13)
 
 **Context:** NIRNAYA's AI classification system had a provider abstraction

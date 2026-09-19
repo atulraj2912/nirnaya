@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -49,6 +50,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+function renderWithProviders(ui) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 300_000 } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 import TicketList from "@/components/tickets/ticket-list";
 
 function getStatusSelect() {
@@ -66,7 +72,7 @@ function getOptionLabels() {
 describe("TicketList - status dropdown", () => {
   describe("My Active Tickets (scope=my-active)", () => {
     it("renders exactly five status options", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -76,7 +82,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders All Active as first option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -87,7 +93,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders Assigned option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -97,7 +103,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders In Progress option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -107,7 +113,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders Waiting for User option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -117,7 +123,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders Reopened option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -127,7 +133,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not render Open option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -137,7 +143,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not render Resolved option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -147,7 +153,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not render Closed option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -157,7 +163,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not render All Statuses option", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -167,7 +173,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("passes scope param in API request", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalled();
@@ -178,7 +184,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("passes scope param and status param together", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalled();
@@ -189,7 +195,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("sends empty status when All Active is selected (no status param)", async () => {
-      render(<TicketList scope="my-active" />);
+      renderWithProviders(<TicketList scope="my-active" />);
 
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalled();
@@ -202,7 +208,7 @@ describe("TicketList - status dropdown", () => {
 
   describe("All Tickets (no scope)", () => {
     it("renders All Statuses as first option", async () => {
-      render(<TicketList />);
+      renderWithProviders(<TicketList />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -213,7 +219,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("renders all eight status options (All Statuses + 7 statuses)", async () => {
-      render(<TicketList />);
+      renderWithProviders(<TicketList />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -223,7 +229,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("includes Open, Resolved, and Closed options", async () => {
-      render(<TicketList />);
+      renderWithProviders(<TicketList />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
@@ -236,7 +242,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not pass scope param in API request", async () => {
-      render(<TicketList />);
+      renderWithProviders(<TicketList />);
 
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalled();
@@ -247,7 +253,7 @@ describe("TicketList - status dropdown", () => {
     });
 
     it("does not include All Active option", async () => {
-      render(<TicketList />);
+      renderWithProviders(<TicketList />);
 
       await waitFor(() => {
         expect(screen.getByText("VPN issue")).toBeInTheDocument();
