@@ -1,4 +1,6 @@
 import prisma from "@/lib/db/prisma";
+import { getIO } from "@/lib/realtime/socket-instance";
+import { emitToUser } from "@/lib/realtime/socket-server";
 
 export class NotificationError extends Error {
   constructor(message, status = 400) {
@@ -42,7 +44,7 @@ export async function createNotification({
     return existing;
   }
 
-  return prisma.notification.create({
+  const created = await prisma.notification.create({
     data: {
       type,
       message,
@@ -51,6 +53,26 @@ export async function createNotification({
       organizationId,
     },
   });
+
+  try {
+    const io = getIO();
+    if (io) {
+      emitToUser(io, recipientId, "notification:new", {
+        notification: {
+          id: created.id,
+          type: created.type,
+          message: created.message,
+          ticketId: created.ticketId,
+          isRead: created.isRead,
+          createdAt: created.createdAt,
+        },
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort; persistence is the source of truth
+  }
+
+  return created;
 }
 
 export async function createBulkNotifications(notifications) {
@@ -142,10 +164,21 @@ export async function markAsRead(notificationId, userId, organizationId) {
     return notification;
   }
 
-  return prisma.notification.update({
+  const updated = await prisma.notification.update({
     where: { id: notificationId },
     data: { isRead: true },
   });
+
+  try {
+    const io = getIO();
+    if (io) {
+      emitToUser(io, userId, "notification:read", { notificationId });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
+
+  return updated;
 }
 
 export async function markAllAsRead(userId, organizationId) {
@@ -157,6 +190,15 @@ export async function markAllAsRead(userId, organizationId) {
     },
     data: { isRead: true },
   });
+
+  try {
+    const io = getIO();
+    if (io) {
+      emitToUser(io, userId, "notification:read_all", { organizationId });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
 
   return { success: true };
 }

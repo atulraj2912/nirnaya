@@ -10,11 +10,26 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     watcher: {
       findUnique: vi.fn(),
-      findMany: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       delete: vi.fn(),
     },
+    notification: {
+      create: vi.fn().mockResolvedValue({}),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
   },
+}));
+
+vi.mock("@/lib/realtime/socket-server", () => ({
+  emitToUser: vi.fn(),
+  emitToOrg: vi.fn(),
+  emitToTicket: vi.fn(),
+}));
+
+vi.mock("@/lib/realtime/socket-instance", () => ({
+  getIO: vi.fn(() => null),
+  setIO: vi.fn(),
 }));
 
 import prisma from "@/lib/db/prisma";

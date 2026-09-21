@@ -1,36 +1,36 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import NotificationList from "./notification-list";
+import {
+  useNotifications,
+  useUnreadNotificationCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from "@/hooks/use-notification-queries";
+import { onNotification, onNotificationReadAll } from "@/lib/realtime/socket-client";
 
 export default function NotificationBell({ user }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const dropdownRef = useRef(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch("/api/notifications/unread-count");
-        if (res.ok && !cancelled) {
-          const data = await res.json();
-          setUnreadCount(data.count);
-        }
-      } catch {
-        // Silently fail — will retry on interval
-      }
-    }
-    load();
-    const interval = setInterval(load, 30000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
+  const { data: unreadData } = useUnreadNotificationCount();
+  const unreadCount = unreadData?.count ?? 0;
+
+  const {
+    data: notificationsData,
+    isLoading,
+    error: queryError,
+    refetch: refetchNotifications,
+  } = useNotifications({ limit: 10 }, { enabled: isOpen });
+
+  const notifications = notificationsData?.notifications ?? [];
+  const error = queryError ? "Failed to load notifications" : "";
+
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -44,64 +44,44 @@ export default function NotificationBell({ user }) {
     }
   }, [isOpen]);
 
-  async function fetchNotifications() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/notifications?limit=10");
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications);
-      } else {
-        setError("Failed to load notifications");
-      }
-    } catch {
-      setError("Network error");
-    } finally {
-      setLoading(false);
+  // Realtime: invalidate caches on new notification
+  const handleNewNotification = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+    if (isOpen) {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
-  }
+  }, [queryClient, isOpen]);
+
+  const handleReadAll = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+    if (isOpen) {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
+  }, [queryClient, isOpen]);
+
+  useEffect(() => {
+    const cleanupNew = onNotification(handleNewNotification);
+    const cleanupReadAll = onNotificationReadAll(handleReadAll);
+    return () => {
+      cleanupNew();
+      cleanupReadAll();
+    };
+  }, [handleNewNotification, handleReadAll]);
 
   function handleToggle() {
     const next = !isOpen;
     setIsOpen(next);
     if (next) {
-      fetchNotifications();
+      refetchNotifications();
     }
   }
 
-  async function handleMarkRead(notificationId) {
-    try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notificationId }),
-      });
-      if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch {
-      // Silently fail
-    }
+  function handleMarkRead(notificationId) {
+    markReadMutation.mutate(notificationId);
   }
 
-  async function handleMarkAllRead() {
-    try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "markAllRead" }),
-      });
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-        setUnreadCount(0);
-      }
-    } catch {
-      // Silently fail
-    }
+  function handleMarkAllRead() {
+    markAllReadMutation.mutate();
   }
 
   return (
@@ -136,12 +116,12 @@ export default function NotificationBell({ user }) {
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-surface shadow-xl">
           <NotificationList
             notifications={notifications}
-            loading={loading}
+            loading={isLoading}
             error={error}
             onMarkRead={handleMarkRead}
             onMarkAllRead={handleMarkAllRead}
             onClose={() => setIsOpen(false)}
-            onRetry={fetchNotifications}
+            onRetry={refetchNotifications}
           />
         </div>
       )}

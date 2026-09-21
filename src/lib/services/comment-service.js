@@ -1,6 +1,8 @@
 import prisma from "@/lib/db/prisma";
 import { satisfyResponseSLA } from "./sla-service";
 import { notifyCommentAdded } from "./notification-service";
+import { emitToTicket } from "@/lib/realtime/socket-server";
+import { getIO } from "@/lib/realtime/socket-instance";
 
 export class CommentError extends Error {
   constructor(message, status = 400) {
@@ -110,6 +112,23 @@ export async function createComment({ ticketId, content, visibility }, user) {
         organizationId: user.organizationId,
       }).catch((err) => console.error("Comment notification failed:", err));
     }
+  }
+
+  // Emit realtime comment event (fire-and-forget)
+  try {
+    const io = getIO();
+    if (io) {
+      emitToTicket(io, ticketId, "ticket:comment_added", {
+        ticketId,
+        commentId: comment.id,
+        authorId: user.id,
+        authorUsername: user.username,
+        isInternal: commentVisibility === "INTERNAL",
+        createdAt: comment.createdAt,
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort
   }
 
   return comment;

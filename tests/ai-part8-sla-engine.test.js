@@ -637,15 +637,16 @@ describe("Part 8: Security / Org Isolation", () => {
 // ============================================================
 describe("Part 8: Ticket Lifecycle Integration", () => {
   it("initializeTicketSLA: sets both due dates and statuses", async () => {
-    const createdAt = new Date("2026-09-21T10:00:00Z");
+    const now = new Date();
+    const createdAt = new Date(now.getTime() - 60_000);
     const config = makeSLAConfig({ responseTimeMinutes: 30, resolutionTimeMinutes: 240 });
     prisma.sLAConfiguration.findFirst.mockResolvedValue(config);
     prisma.ticket.findUnique.mockResolvedValue(makeTicket({ createdAt }));
     prisma.ticket.update.mockResolvedValue({});
     await initializeTicketSLA(ticketId, org1, "MEDIUM");
     const updateCall = prisma.ticket.update.mock.calls[0][0];
-    expect(updateCall.data.responseDueAt).toEqual(new Date("2026-09-21T10:30:00Z"));
-    expect(updateCall.data.resolutionDueAt).toEqual(new Date("2026-09-21T14:00:00Z"));
+    expect(updateCall.data.responseDueAt).toEqual(new Date(createdAt.getTime() + 30 * 60_000));
+    expect(updateCall.data.resolutionDueAt).toEqual(new Date(createdAt.getTime() + 240 * 60_000));
     expect(updateCall.data.responseSlaStatus).toBe("ON_TRACK");
     expect(updateCall.data.resolutionSlaStatus).toBe("ON_TRACK");
   });

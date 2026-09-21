@@ -22,6 +22,8 @@ import {
   notifyTicketReopened,
   createNotification,
 } from "./notification-service";
+import { emitToTicket } from "@/lib/realtime/socket-server";
+import { getIO } from "@/lib/realtime/socket-instance";
 
 /**
  * Generate a ticket number in NIR-YYYY-000001 format.
@@ -474,6 +476,42 @@ export async function transitionStatus(ticketId, newStatus, user) {
     }
   }
 
+  // Notify watchers of status changes (fire-and-forget)
+  prisma.watcher
+    .findMany({
+      where: { ticketId },
+      select: { userId: true },
+    })
+    .then((watchers) => {
+      for (const w of watchers) {
+        if (w.userId !== user.id && w.userId !== updated.assignedAgentId && w.userId !== ticket.requesterId) {
+          createNotification({
+            type: "TICKET_STATUS_CHANGED",
+            message: `Ticket ${ticketNumber} status changed to ${newStatus.replace(/_/g, " ").toLowerCase()}`,
+            ticketId,
+            recipientId: w.userId,
+            organizationId: ticket.organizationId,
+          }).catch((err) => console.error("Watcher notification failed:", err));
+        }
+      }
+    })
+    .catch((err) => console.error("Watcher lookup failed:", err));
+
+  // Emit realtime ticket event (fire-and-forget)
+  try {
+    const io = getIO();
+    if (io) {
+      emitToTicket(io, ticketId, "ticket:status-changed", {
+        ticketId,
+        ticketNumber,
+        status: newStatus,
+        updatedBy: user.id,
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
+
   return updated;
 }
 
@@ -569,6 +607,42 @@ export async function assignTicket(ticketId, data, user) {
     assignedById: user.id,
     organizationId: ticket.organizationId,
   }).catch((err) => console.error("Notification failed:", err));
+
+  // Notify watchers of assignment (fire-and-forget)
+  prisma.watcher
+    .findMany({
+      where: { ticketId },
+      select: { userId: true },
+    })
+    .then((watchers) => {
+      for (const w of watchers) {
+        if (w.userId !== user.id && w.userId !== parsed.agentId) {
+          createNotification({
+            type: "TICKET_ASSIGNED",
+            message: `Ticket ${updated.ticketNumber || ticket.ticketNumber} was assigned`,
+            ticketId,
+            recipientId: w.userId,
+            organizationId: ticket.organizationId,
+          }).catch((err) => console.error("Watcher notification failed:", err));
+        }
+      }
+    })
+    .catch((err) => console.error("Watcher lookup failed:", err));
+
+  // Emit realtime assignment event (fire-and-forget)
+  try {
+    const io = getIO();
+    if (io) {
+      emitToTicket(io, ticketId, "ticket:assignment_changed", {
+        ticketId,
+        ticketNumber: updated.ticketNumber || ticket.ticketNumber,
+        assignedAgentId: parsed.agentId,
+        assignedBy: user.id,
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
 
   return updated;
 }

@@ -1,4 +1,7 @@
 import prisma from "@/lib/db/prisma";
+import { createNotification } from "./notification-service";
+import { emitToTicket } from "@/lib/realtime/socket-server";
+import { getIO } from "@/lib/realtime/socket-instance";
 
 export class WatcherError extends Error {
   constructor(message, status = 400) {
@@ -53,12 +56,53 @@ export async function addWatcher(ticketId, userId, user) {
     return existing;
   }
 
-  return prisma.watcher.create({
+  const watcher = await prisma.watcher.create({
     data: {
       ticketId,
       userId: targetUserId,
     },
   });
+
+  // Fetch ticket info for notifications and events
+  const ticketInfo = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { ticketNumber: true },
+  });
+
+  // Notify existing watchers (fire-and-forget, excluding the new watcher and the actor)
+  prisma.watcher
+    .findMany({
+      where: { ticketId, userId: { not: targetUserId, not: user.id } },
+      select: { userId: true },
+    })
+    .then((existingWatchers) => {
+      for (const w of existingWatchers) {
+        createNotification({
+          type: "WATCHER_ADDED",
+          message: `Someone is now watching ticket ${ticketInfo?.ticketNumber || ""}`,
+          ticketId,
+          recipientId: w.userId,
+          organizationId: user.organizationId,
+        }).catch((err) => console.error("Watcher notification failed:", err));
+      }
+    })
+    .catch((err) => console.error("Watcher lookup failed:", err));
+
+  // Emit realtime watcher event (fire-and-forget)
+  try {
+    const io = getIO();
+    if (io) {
+      emitToTicket(io, ticketId, "ticket:updated", {
+        ticketId,
+        event: "watcher_added",
+        watcherId: targetUserId,
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
+
+  return watcher;
 }
 
 export async function removeWatcher(ticketId, userId, user) {
@@ -88,6 +132,20 @@ export async function removeWatcher(ticketId, userId, user) {
   await prisma.watcher.delete({
     where: { id: watcher.id },
   });
+
+  // Emit realtime watcher event (fire-and-forget)
+  try {
+    const io = getIO();
+    if (io) {
+      emitToTicket(io, ticketId, "ticket:updated", {
+        ticketId,
+        event: "watcher_removed",
+        watcherId: targetUserId,
+      });
+    }
+  } catch {
+    // Realtime emission is best-effort
+  }
 
   return { success: true };
 }

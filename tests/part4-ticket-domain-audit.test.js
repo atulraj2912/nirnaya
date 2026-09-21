@@ -10,8 +10,20 @@ vi.mock("@/lib/db/prisma", () => ({
     ticketTag: { createMany: vi.fn(), deleteMany: vi.fn() },
     user: { findUnique: vi.fn() },
     ticketAssignmentHistory: { create: vi.fn() },
+    watcher: { findMany: vi.fn().mockResolvedValue([]) },
     $transaction: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/realtime/socket-server", () => ({
+  emitToUser: vi.fn(),
+  emitToOrg: vi.fn(),
+  emitToTicket: vi.fn(),
+}));
+
+vi.mock("@/lib/realtime/socket-instance", () => ({
+  getIO: vi.fn(() => null),
+  setIO: vi.fn(),
 }));
 
 vi.mock("@/lib/env", () => ({

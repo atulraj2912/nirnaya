@@ -31,8 +31,22 @@ vi.mock("@/lib/db/prisma", () => ({
     ticketAssignmentHistory: {
       create: vi.fn(),
     },
+    watcher: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     $transaction: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/realtime/socket-server", () => ({
+  emitToUser: vi.fn(),
+  emitToOrg: vi.fn(),
+  emitToTicket: vi.fn(),
+}));
+
+vi.mock("@/lib/realtime/socket-instance", () => ({
+  getIO: vi.fn(() => null),
+  setIO: vi.fn(),
 }));
 
 import prisma from "@/lib/db/prisma";

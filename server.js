@@ -3,6 +3,7 @@ import { parse } from "url";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
 import { setupSocketServer } from "./src/lib/realtime/socket-server.js";
+import { setIO } from "./src/lib/realtime/socket-instance.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0";
@@ -33,6 +34,7 @@ app.prepare().then(() => {
   });
 
   setupSocketServer(io);
+  setIO(io);
 
   httpServer.listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
