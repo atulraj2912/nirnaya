@@ -11,7 +11,7 @@ release-package ready, and demo ready.
 |---|---|
 | Lint | ✅ 0 errors, 1 pre-existing warning (avatar `<img>`) |
 | Prisma validation | ✅ valid |
-| Tests | ✅ 545/545 passed (35 test files) |
+| Tests | ✅ 1233/1233 passed (51 test files) |
 | Production build | ✅ compiled, 46 routes |
 
 ### Final Architecture
@@ -41,6 +41,36 @@ release-package ready, and demo ready.
 - Security hardening (auth standardization, pagination bounds, input validation)
 
 ## Completed phases
+
+### Phase 12 — Final Production Build, Documentation & Release Readiness
+
+**What was implemented:**
+
+- **Dead file removal:** Deleted `tests/gen1.js` (contained only `console.log(1)`, never imported).
+- **Production debug logging fix:** Gated unconditional `console.log` in `src/lib/realtime/socket-server.js` behind `NODE_ENV === "development"` to prevent leaking usernames/roles in production.
+- **Documentation corrections:** Updated `PROGRESS.md` and `TEST_PLAN.md` with correct final test counts (1233 tests, 51 files).
+
+**Audit results:**
+
+- All 10 production dependencies verified as used.
+- All 11 dev dependencies verified as used.
+- All 10 env vars validated by Zod schema; no client-side exposure.
+- Security headers configured in `next.config.mjs`.
+- Socket.IO CORS restricted in production.
+- Prisma schema valid, migrations up to date.
+- No TODO/FIXME/HACK/TEMP comments in codebase.
+- E2E test infrastructure intact (Playwright + 3 smoke tests).
+
+**Tests run:**
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ pass (1 warning: avatar `<img>`, acceptable) |
+| Prisma validation | `npx prisma validate` | ✅ valid |
+| Unit tests | `npx vitest run` | ✅ 1233/1233 passed |
+| Production build | `npx next build` | ✅ compiled, 46 routes generated |
+
+---
 
 ### Phase 11 — Security Hardening, Validation, Regression Testing & UX Polish
 

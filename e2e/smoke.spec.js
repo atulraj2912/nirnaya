@@ -13,7 +13,18 @@ test("Login page renders with form elements", async ({ page }) => {
 });
 
 test("Dashboard page renders with cards", async ({ page }) => {
+  // Authenticate via API (login form is tested separately above)
+  await page.goto("/login");
+  await page.evaluate(async () => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "sarah.chen@acme-corp.com", password: "agent123" }),
+    });
+    if (!res.ok) throw new Error(`Login failed: ${res.status}`);
+  });
+
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByText("Open Tickets")).toBeVisible();
+  await expect(page.getByText("Open Tickets", { exact: true })).toBeVisible();
 });

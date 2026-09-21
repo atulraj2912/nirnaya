@@ -88,12 +88,12 @@ Final V1:
       tickets/[id]/page.js     # ticket detail with AI classification + recommendations
       tickets/mine/page.js     # my tickets (USER-filtered)
       admin/
-        users/page.js          # user management placeholder
-        departments/page.js    # department mgmt placeholder
-        categories/page.js     # category mgmt placeholder
-        tags/page.js           # tag mgmt placeholder
-        sla/page.js            # SLA config placeholder
-        settings/page.js       # settings placeholder
+        users/page.js          # user management
+        departments/page.js    # department management
+        categories/page.js     # category management
+        tags/page.js           # tag management
+        sla/page.js            # SLA configuration
+        settings/page.js       # org settings
     /api
       /health/route.js         # toolchain smoke-test endpoint
       /auth/login/route.js     # POST login (bcrypt + JWT + cookies)
@@ -190,26 +190,6 @@ Final V1:
 vitest.config.mjs / vitest.setup.js
 playwright.config.js
 next.config.mjs / jsconfig.json / eslint.config.mjs / postcss.config.mjs
-```
-
-Planned growth (later phases), not created yet:
-
-```
-/src
-  /app
-    /api/tickets/[id]/comments/route.js               [Phase 9]
-    /api/tickets/[id]/watchers/route.js                [Phase 9]
-    /api/tickets/[id]/activity/route.js                 [Phase 9]
-    /api/notifications/*                                 [Phase 8]
-    /api/sla/route.js                                       [Phase 7]
-    /api/admin/**/route.js                                     [Phase 10]
-  /lib
-    /services/
-      sla-engine.js                                   [Phase 7]
-      notification-service.js                         [Phase 8]
-    /realtime/{socket-server,emit,rooms}.js            [Phase 8]
-  /hooks/*.js  (React Query hooks)                    [as needed]
-server.js  (custom Next.js + Socket.IO host)          [Phase 8]
 ```
 
 ## Multi-tenancy

@@ -51,7 +51,9 @@ export function setupSocketServer(io) {
         console.warn("[Socket.IO] Auth failed: no valid token found");
         return next(new Error("Authentication required"));
       }
-      console.log("[Socket.IO] Authenticated:", user.username, user.role);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Socket.IO] Authenticated:", user.username, user.role);
+      }
       socket.data.user = user;
       next();
     } catch (err) {

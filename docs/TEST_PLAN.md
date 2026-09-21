@@ -345,8 +345,8 @@ Results of running these are recorded in `PROGRESS.md`.
 
 | Metric | Value |
 |--------|-------|
-| Test files | 34 |
-| Total tests | 545 |
+| Test files | 51 |
+| Total tests | 1233 |
 | All tests passing | Yes |
 
 Results of running these are recorded in `PROGRESS.md`.
