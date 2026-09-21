@@ -22,138 +22,150 @@ function evaluateSLAStatus(createdAt, dueAt, waitingSince, isCompleted) {
 
 export async function runSLABreachScan(organizationId) {
   const now = new Date();
-
-  const tickets = await prisma.ticket.findMany({
-    where: {
-      organizationId,
-      status: { notIn: ["CLOSED"] },
-      OR: [
-        {
-          responseSlaStatus: { in: ["ON_TRACK", "WARNING"] },
-          responseDueAt: { not: null },
-          firstRespondedAt: null,
-        },
-        {
-          resolutionSlaStatus: { in: ["ON_TRACK", "WARNING"] },
-          resolutionDueAt: { not: null },
-          status: { notIn: ["RESOLVED", "CLOSED"] },
-        },
-      ],
-    },
-    select: {
-      id: true,
-      ticketNumber: true,
-      createdAt: true,
-      status: true,
-      waitingSince: true,
-      responseSlaStatus: true,
-      resolutionSlaStatus: true,
-      responseDueAt: true,
-      resolutionDueAt: true,
-      firstRespondedAt: true,
-      requesterId: true,
-      assignedAgentId: true,
-    },
-  });
-
+  const BATCH_SIZE = 100;
+  let skip = 0;
   let breached = 0;
   let warned = 0;
   let unchanged = 0;
+  let totalScanned = 0;
   const notifications = [];
 
-  for (const ticket of tickets) {
-    let responseChanged = false;
-    let resolutionChanged = false;
-    let newResponseStatus = ticket.responseSlaStatus;
-    let newResolutionStatus = ticket.resolutionSlaStatus;
+  let hasMore = true;
+  while (hasMore) {
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        organizationId,
+        status: { notIn: ["CLOSED"] },
+        OR: [
+          {
+            responseSlaStatus: { in: ["ON_TRACK", "WARNING"] },
+            responseDueAt: { not: null },
+            firstRespondedAt: null,
+          },
+          {
+            resolutionSlaStatus: { in: ["ON_TRACK", "WARNING"] },
+            resolutionDueAt: { not: null },
+            status: { notIn: ["RESOLVED", "CLOSED"] },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        ticketNumber: true,
+        createdAt: true,
+        status: true,
+        waitingSince: true,
+        responseSlaStatus: true,
+        resolutionSlaStatus: true,
+        responseDueAt: true,
+        resolutionDueAt: true,
+        firstRespondedAt: true,
+        requesterId: true,
+        assignedAgentId: true,
+      },
+      take: BATCH_SIZE,
+      skip,
+      orderBy: { createdAt: "asc" },
+    });
 
-    if (ticket.responseDueAt && !ticket.firstRespondedAt) {
-      const responseStatus = evaluateSLAStatus(
-        ticket.createdAt,
-        ticket.responseDueAt,
-        ticket.waitingSince,
-        false
-      );
+    hasMore = tickets.length === BATCH_SIZE;
+    skip += BATCH_SIZE;
+    totalScanned += tickets.length;
 
-      if (responseStatus !== ticket.responseSlaStatus) {
-        newResponseStatus = responseStatus;
-        responseChanged = true;
+    for (const ticket of tickets) {
+      let responseChanged = false;
+      let resolutionChanged = false;
+      let newResponseStatus = ticket.responseSlaStatus;
+      let newResolutionStatus = ticket.resolutionSlaStatus;
 
-        if (responseStatus === "BREACHED") {
-          breached++;
-          const notif = await notifySLABreach({
-            ticketId: ticket.id,
-            ticketNumber: ticket.ticketNumber,
-            slaType: "response",
-            recipientId: ticket.requesterId,
-            organizationId,
-          });
-          if (notif) notifications.push(notif);
-        } else if (responseStatus === "WARNING") {
-          warned++;
-          const notif = await notifySLAWarning({
-            ticketId: ticket.id,
-            ticketNumber: ticket.ticketNumber,
-            slaType: "response",
-            recipientId: ticket.requesterId,
-            organizationId,
-          });
-          if (notif) notifications.push(notif);
+      if (ticket.responseDueAt && !ticket.firstRespondedAt) {
+        const responseStatus = evaluateSLAStatus(
+          ticket.createdAt,
+          ticket.responseDueAt,
+          ticket.waitingSince,
+          false
+        );
+
+        if (responseStatus !== ticket.responseSlaStatus) {
+          newResponseStatus = responseStatus;
+          responseChanged = true;
+
+          if (responseStatus === "BREACHED") {
+            breached++;
+            const notif = await notifySLABreach({
+              ticketId: ticket.id,
+              ticketNumber: ticket.ticketNumber,
+              slaType: "response",
+              recipientId: ticket.requesterId,
+              organizationId,
+            });
+            if (notif) notifications.push(notif);
+          } else if (responseStatus === "WARNING") {
+            warned++;
+            const notif = await notifySLAWarning({
+              ticketId: ticket.id,
+              ticketNumber: ticket.ticketNumber,
+              slaType: "response",
+              recipientId: ticket.requesterId,
+              organizationId,
+            });
+            if (notif) notifications.push(notif);
+          }
         }
       }
-    }
 
-    if (ticket.resolutionDueAt && ticket.status !== "RESOLVED" && ticket.status !== "CLOSED") {
-      const resolutionStatus = evaluateSLAStatus(
-        ticket.createdAt,
-        ticket.resolutionDueAt,
-        ticket.waitingSince,
-        false
-      );
+      if (ticket.resolutionDueAt && ticket.status !== "RESOLVED" && ticket.status !== "CLOSED") {
+        const resolutionStatus = evaluateSLAStatus(
+          ticket.createdAt,
+          ticket.resolutionDueAt,
+          ticket.waitingSince,
+          false
+        );
 
-      if (resolutionStatus !== ticket.resolutionSlaStatus) {
-        newResolutionStatus = resolutionStatus;
-        resolutionChanged = true;
+        if (resolutionStatus !== ticket.resolutionSlaStatus) {
+          newResolutionStatus = resolutionStatus;
+          resolutionChanged = true;
 
-        if (resolutionStatus === "BREACHED") {
-          breached++;
-          const notif = await notifySLABreach({
-            ticketId: ticket.id,
-            ticketNumber: ticket.ticketNumber,
-            slaType: "resolution",
-            recipientId: ticket.requesterId,
-            organizationId,
-          });
-          if (notif) notifications.push(notif);
-        } else if (resolutionStatus === "WARNING") {
-          warned++;
-          const notif = await notifySLAWarning({
-            ticketId: ticket.id,
-            ticketNumber: ticket.ticketNumber,
-            slaType: "resolution",
-            recipientId: ticket.requesterId,
-            organizationId,
-          });
-          if (notif) notifications.push(notif);
+          if (resolutionStatus === "BREACHED") {
+            breached++;
+            const notif = await notifySLABreach({
+              ticketId: ticket.id,
+              ticketNumber: ticket.ticketNumber,
+              slaType: "resolution",
+              recipientId: ticket.requesterId,
+              organizationId,
+            });
+            if (notif) notifications.push(notif);
+          } else if (resolutionStatus === "WARNING") {
+            warned++;
+            const notif = await notifySLAWarning({
+              ticketId: ticket.id,
+              ticketNumber: ticket.ticketNumber,
+              slaType: "resolution",
+              recipientId: ticket.requesterId,
+              organizationId,
+            });
+            if (notif) notifications.push(notif);
+          }
         }
       }
-    }
 
-    if (responseChanged || resolutionChanged) {
-      await prisma.ticket.update({
-        where: { id: ticket.id },
-        data: {
-          ...(responseChanged ? { responseSlaStatus: newResponseStatus } : {}),
-          ...(resolutionChanged ? { resolutionSlaStatus: newResolutionStatus } : {}),
-        },
-      });
-    } else {
-      unchanged++;
+      if (responseChanged || resolutionChanged) {
+        await prisma.ticket.update({
+          where: { id: ticket.id },
+          data: {
+            ...(responseChanged ? { responseSlaStatus: newResponseStatus } : {}),
+            ...(resolutionChanged ? { resolutionSlaStatus: newResolutionStatus } : {}),
+          },
+        });
+      } else {
+        unchanged++;
+      }
     }
   }
 
   return {
-    scanned: tickets.length,
+    scanned: totalScanned,
     breached,
     warned,
     unchanged,

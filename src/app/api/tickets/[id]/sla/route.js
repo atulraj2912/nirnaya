@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/authz";
 import { getTicketById, TicketError } from "@/lib/services/ticket-service";
-import { computeSLAInfo, evaluateAndPersistSLA } from "@/lib/services/sla-service";
+import { computeSLAInfo } from "@/lib/services/sla-service";
 
 export async function GET(request, { params }) {
   const { user, response } = await requireAuth(request);
@@ -9,10 +9,6 @@ export async function GET(request, { params }) {
 
   try {
     const { id } = await params;
-
-    // Evaluate and persist any status changes first
-    await evaluateAndPersistSLA(id);
-
     const ticket = await getTicketById(id, user);
     const slaInfo = computeSLAInfo(ticket);
 

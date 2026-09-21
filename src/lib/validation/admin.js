@@ -124,3 +124,13 @@ export const updateOrgSettingsSchema = z.object({
   businessHoursEnd: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   timezone: z.string().max(50).optional(),
 });
+
+export const createSavedReplySchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title must be at most 200 characters"),
+  content: z.string().min(1, "Content is required").max(10000, "Content must be at most 10000 characters"),
+});
+
+export const updateSavedReplySchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  content: z.string().min(1).max(10000).optional(),
+});

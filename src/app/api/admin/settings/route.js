@@ -65,7 +65,7 @@ export async function PATCH(request) {
     return NextResponse.json({ organization: org });
   } catch (err) {
     if (err.name === "ZodError") {
-      return NextResponse.json({ error: "Validation failed", details: err.issues }, { status: 400 });
+      return NextResponse.json({ error: "Validation failed" }, { status: 400 });
     }
     console.error("Update org settings error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
