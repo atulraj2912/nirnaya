@@ -489,7 +489,10 @@ export async function transitionStatus(ticketId, newStatus, user) {
 export async function assignTicket(ticketId, data, user) {
   const parsed = assignTicketSchema.parse(data);
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { department: { select: { id: true } } },
+  });
 
   if (!ticket) {
     throw new TicketError("Ticket not found", 404);
@@ -499,7 +502,13 @@ export async function assignTicket(ticketId, data, user) {
     throw new TicketError("Ticket not found", 404);
   }
 
-  // Validate target agent
+  // Ticket must be in an assignable state (spec §19: revalidate ticket current state)
+  // Per lifecycle D-006: only OPEN tickets can transition to ASSIGNED
+  if (ticket.status !== "OPEN") {
+    throw new TicketError("Ticket is not in an assignable state", 400);
+  }
+
+  // Validate target agent (fresh validation per spec §19)
   const agent = await prisma.user.findUnique({ where: { id: parsed.agentId } });
 
   if (!agent) {
@@ -516,6 +525,11 @@ export async function assignTicket(ticketId, data, user) {
 
   if (agent.status !== "ACTIVE") {
     throw new TicketError("Cannot assign to inactive user", 400);
+  }
+
+  // Department eligibility: agent must belong to ticket's department (spec §19)
+  if (ticket.departmentId && agent.departmentId !== ticket.departmentId) {
+    throw new TicketError("Agent department does not match ticket department", 400);
   }
 
   // Update ticket and create assignment history in a transaction

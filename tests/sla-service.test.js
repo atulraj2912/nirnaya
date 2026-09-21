@@ -417,7 +417,7 @@ describe("SLA Service", () => {
 
   describe("reopenSLA", () => {
     it("resets resolution SLA to ON_TRACK with new deadline", async () => {
-      const createdAt = new Date("2026-09-01T10:00:00Z");
+      const createdAt = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
       const config = makeSLAConfig({ resolutionTimeMinutes: 240 });
       const ticket = makeTicket({ createdAt, status: "RESOLVED" });
 

@@ -50,7 +50,7 @@ import { canTransition, getAllowedTransitions, isTerminal } from "@/lib/services
 const org1 = "org-1", org2 = "org-2";
 
 function makeUser(o = {}) { return { id: "user-1", role: "USER", organizationId: org1, status: "ACTIVE", ...o }; }
-function makeAgent(o = {}) { return { id: "agent-1", role: "AGENT", organizationId: org1, status: "ACTIVE", ...o }; }
+function makeAgent(o = {}) { return { id: "agent-1", role: "AGENT", organizationId: org1, status: "ACTIVE", departmentId: "dept-1", ...o }; }
 function makeAdmin(o = {}) { return { id: "admin-1", role: "ADMIN", organizationId: org1, ...o }; }
 function makeTicket(o = {}) {
   return { id: "ticket-1", ticketNumber: "NIR-2026-000001", title: "Test ticket", description: "Test description", status: "OPEN", priority: "MEDIUM", type: "INCIDENT", source: "WEB", organizationId: org1, departmentId: "dept-1", categoryId: null, requesterId: "user-1", assignedAgentId: null, createdAt: new Date(), updatedAt: new Date(), ...o };
@@ -779,5 +779,93 @@ describe("Part 4: Service Error Handling", () => {
     expect(e.name).toBe("TicketError");
     expect(e.status).toBe(400);
     expect(e.message).toBe("test");
+  });
+
+  it("A: recommended agent becomes inactive before assignment", async () => {
+    prisma.ticket.findUnique.mockResolvedValue(makeTicket());
+    prisma.user.findUnique.mockResolvedValue({ ...makeAgent(), status: "INACTIVE" });
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(e.message).toContain("inactive");
+      expect(e.status).toBe(400);
+    }
+  });
+
+  it("B: recommended agent changes department before assignment", async () => {
+    prisma.ticket.findUnique.mockResolvedValue(makeTicket({ departmentId: "dept-1", department: { id: "dept-1" } }));
+    prisma.user.findUnique.mockResolvedValue({ ...makeAgent(), departmentId: "dept-2" });
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(e.message).toContain("department");
+      expect(e.status).toBe(400);
+    }
+  });
+
+  it("C: target agent belongs to another organization", async () => {
+    prisma.ticket.findUnique.mockResolvedValue(makeTicket());
+    prisma.user.findUnique.mockResolvedValue(makeAgent({ organizationId: org2 }));
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(e.status).toBe(404);
+    }
+  });
+
+  it("D: ticket becomes non-assignable before assignment", async () => {
+    prisma.ticket.findUnique.mockResolvedValue({ ...makeTicket({ status: "RESOLVED" }), department: { id: "dept-1" } });
+    prisma.user.findUnique.mockResolvedValue(makeAgent());
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(e.message).toContain("assignable");
+      expect(e.status).toBe(400);
+    }
+  });
+
+  it("D2: non-assignable ticket does not mutate assignment", async () => {
+    prisma.ticket.findUnique.mockResolvedValue({ ...makeTicket({ status: "IN_PROGRESS" }), department: { id: "dept-1" } });
+    prisma.user.findUnique.mockResolvedValue(makeAgent());
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.ticketAssignmentHistory.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it("D3: non-assignable ticket does not transition status", async () => {
+    prisma.ticket.findUnique.mockResolvedValue({ ...makeTicket({ status: "CLOSED" }), department: { id: "dept-1" } });
+    prisma.user.findUnique.mockResolvedValue(makeAgent());
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(prisma.ticket.update).not.toHaveBeenCalled();
+    }
+  });
+
+  it("E: stale recommendation cannot bypass fresh validation", async () => {
+    prisma.ticket.findUnique.mockResolvedValue(makeTicket());
+    prisma.user.findUnique.mockResolvedValue({ ...makeAgent(), status: "INACTIVE" });
+    try {
+      await assignTicket("t1", { agentId: "agent-1" }, makeAdmin());
+      expect.fail("Should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(TicketError);
+      expect(e.status).toBe(400);
+    }
   });
 });

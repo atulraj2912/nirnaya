@@ -57,6 +57,7 @@ const mockAgent = {
   role: "AGENT",
   organizationId: "org-1",
   status: "ACTIVE",
+  departmentId: "dept-1",
 };
 
 const mockAdmin = {

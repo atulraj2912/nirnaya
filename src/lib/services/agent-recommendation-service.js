@@ -521,3 +521,5 @@ export async function getRecommendations(ticketId, user) {
     return { error: "Recommendation failed" };
   }
 }
+
+export { calculateConfidence };

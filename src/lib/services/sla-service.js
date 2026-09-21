@@ -6,7 +6,6 @@ function evaluateStatus({ isBreached, isPaused, isCompleted, remainingMs, origin
   if (isCompleted) return "COMPLETED";
   if (isPaused) return "PAUSED";
   if (isBreached) return "BREACHED";
-  if (isPaused) return "PAUSED";
   if (remainingMs <= originalMs * WARNING_THRESHOLD) return "WARNING";
   return "ON_TRACK";
 }
@@ -115,7 +114,6 @@ export async function resumeSLA(ticketId) {
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
   if (!ticket) return null;
 
-  const now = new Date();
   const resolutionStatus = calculateStatus(
     ticket.createdAt,
     ticket.resolutionDueAt,
@@ -123,11 +121,23 @@ export async function resumeSLA(ticketId) {
     null
   );
 
+  // Also recalculate response SLA status (was stale during pause)
+  let responseStatus = ticket.responseSlaStatus;
+  if (ticket.responseDueAt && !ticket.firstRespondedAt) {
+    responseStatus = calculateStatus(
+      ticket.createdAt,
+      ticket.responseDueAt,
+      null,
+      null
+    );
+  }
+
   return prisma.ticket.update({
     where: { id: ticketId },
     data: {
       waitingSince: null,
       resolutionSlaStatus: resolutionStatus,
+      responseSlaStatus: responseStatus,
     },
   });
 }
@@ -207,12 +217,15 @@ export async function reopenSLA(ticketId) {
   const createdAt = ticket.createdAt;
   const resolutionDueAt = new Date(createdAt.getTime() + config.resolutionTimeMinutes * 60 * 1000);
 
+  // Evaluate actual status (don't hardcode ON_TRACK — deadline may already be past)
+  const resolutionStatus = calculateStatus(createdAt, resolutionDueAt, null, null);
+
   return prisma.ticket.update({
     where: { id: ticketId },
     data: {
       resolvedAt: null,
       resolutionDueAt,
-      resolutionSlaStatus: "ON_TRACK",
+      resolutionSlaStatus: resolutionStatus,
     },
   });
 }

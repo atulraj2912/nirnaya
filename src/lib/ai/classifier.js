@@ -18,7 +18,7 @@ import "./providers/real";
  *
  * @param {import("./validation").ClassificationInput} input - Ticket context
  * @param {object} [options] - Additional options
- * @param {number} [options.timeout=10000] - Provider timeout in ms
+ * @param {number} [options.timeout=30000] - Provider timeout in ms
  * @param {string[]} [options.categories] - Available category names for the org
  * @param {string[]} [options.departments] - Available department names for the org
  * @returns {Promise<object>} Validated classification output
