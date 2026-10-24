@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/notification-bell";
@@ -38,18 +39,29 @@ const statusLabels = {
 
 export default function Header({ user }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [loggingOut, setLoggingOut] = useState(false);
   useSocketConnection();
   const socketStatus = useSocketStatus();
 
   async function handleLogout() {
     setLoggingOut(true);
+
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+
+      queryClient.clear();
+
+      router.replace("/login");
       router.refresh();
     } catch {
-      // Logout failed silently — user can retry
+      // Logout failed — allow the user to retry.
     } finally {
       setLoggingOut(false);
     }

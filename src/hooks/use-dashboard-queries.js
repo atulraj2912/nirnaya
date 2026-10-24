@@ -3,23 +3,57 @@
 import { useQuery } from "@tanstack/react-query";
 
 export function useDashboardStats() {
-  return useQuery({
-    queryKey: ["dashboard", "stats"],
+  const userQuery = useQuery({
+    queryKey: ["auth", "me"],
     queryFn: async () => {
-      const meRes = await fetch("/api/auth/me");
-      if (!meRes.ok) throw new Error("Not authenticated");
-      const { user } = await meRes.json();
-      
+      const res = await fetch("/api/auth/me", {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("Not authenticated");
+      }
+
+      return res.json();
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
+  const user = userQuery.data?.user;
+
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard", "stats", user?.id, user?.role],
+    enabled: Boolean(user?.id && user?.role),
+    queryFn: async () => {
       let endpoint;
-      if (user.role === "ADMIN") endpoint = "/api/admin/dashboard";
-      else if (user.role === "AGENT") endpoint = "/api/dashboard/agent";
-      else endpoint = "/api/dashboard/user";
-      
-      const res = await fetch(endpoint);
-      if (!res.ok) throw new Error("Failed to load dashboard");
+
+      if (user.role === "ADMIN") {
+        endpoint = "/api/admin/dashboard";
+      } else if (user.role === "AGENT") {
+        endpoint = "/api/dashboard/agent";
+      } else {
+        endpoint = "/api/dashboard/user";
+      }
+
+      const res = await fetch(endpoint, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to load dashboard");
+      }
+
       return res.json();
     },
   });
+
+  return {
+    ...dashboardQuery,
+    isLoading: userQuery.isLoading || dashboardQuery.isLoading,
+    error: userQuery.error || dashboardQuery.error,
+    refetch: dashboardQuery.refetch,
+  };
 }
 
 export function useAnalytics(timeWindow = "30d") {
