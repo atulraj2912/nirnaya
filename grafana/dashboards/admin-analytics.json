@@ -1,0 +1,2008 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "NIRNAYA Admin Dashboard — Organization-wide analytics powered by NIRNAYA analytics API.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Executive Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Total Tickets",
+      "description": "Total tickets created in the selected time range.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.createdTrend",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "created",
+              "jsonPath": "$.tickets.createdTrend[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Open Tickets",
+      "description": "Tickets with status OPEN.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.statusDistribution[?(@.status=='OPEN')].count",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.tickets.statusDistribution[status='OPEN'].count",
+              "type": "number",
+              "language": "jsonata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "In Progress",
+      "description": "Tickets with status IN_PROGRESS.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.statusDistribution[?(@.status=='IN_PROGRESS')].count",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.tickets.statusDistribution[status='IN_PROGRESS'].count",
+              "type": "number",
+              "language": "jsonata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Resolved",
+      "description": "Tickets with status RESOLVED.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.statusDistribution[?(@.status=='RESOLVED')].count",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.tickets.statusDistribution[status='RESOLVED'].count",
+              "type": "number",
+              "language": "jsonata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "darkgreen",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Closed",
+      "description": "Tickets with status CLOSED.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.statusDistribution[?(@.status=='CLOSED')].count",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.tickets.statusDistribution[status='CLOSED'].count",
+              "type": "number",
+              "language": "jsonata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "SLA Compliance",
+      "description": "Percentage of tickets meeting resolution SLA.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.sla.resolutionComplianceRate",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.sla.resolutionComplianceRate",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 101,
+      "title": "Ticket Trends",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Ticket Trends — Created / Resolved / Closed",
+      "description": "Time series of ticket creation, resolution, and closure counts over the selected time range.",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.createdTrend",
+          "refId": "Created",
+          "alias": "Created",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "time",
+              "jsonPath": "$.tickets.createdTrend[*].period",
+              "type": "time"
+            },
+            {
+              "name": "Created",
+              "jsonPath": "$.tickets.createdTrend[*].count",
+              "type": "number"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.resolvedTrend",
+          "refId": "Resolved",
+          "alias": "Resolved",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "time",
+              "jsonPath": "$.tickets.resolvedTrend[*].period",
+              "type": "time"
+            },
+            {
+              "name": "Resolved",
+              "jsonPath": "$.tickets.resolvedTrend[*].count",
+              "type": "number"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.closedTrend",
+          "refId": "Closed",
+          "alias": "Closed",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "time",
+              "jsonPath": "$.tickets.closedTrend[*].period",
+              "type": "time"
+            },
+            {
+              "name": "Closed",
+              "jsonPath": "$.tickets.closedTrend[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 102,
+      "title": "Ticket Distribution",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 15
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent",
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Tickets by Status",
+      "description": "Distribution of tickets across statuses.",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.statusDistribution",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "status",
+              "jsonPath": "$.tickets.statusDistribution[*].status"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.tickets.statusDistribution[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 15
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent",
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Tickets by Priority",
+      "description": "Distribution of tickets across priority levels.",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.priorityDistribution",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "priority",
+              "jsonPath": "$.tickets.priorityDistribution[*].priority"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.tickets.priorityDistribution[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tickets",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 15
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Tickets by Department",
+      "description": "Number of tickets per department.",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.byDepartment",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "name",
+              "jsonPath": "$.tickets.byDepartment[*].name"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.tickets.byDepartment[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tickets",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 15
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Tickets by Category",
+      "description": "Number of tickets per category.",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.tickets.byCategory",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "name",
+              "jsonPath": "$.tickets.byCategory[*].name"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.tickets.byCategory[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 103,
+      "title": "Agent Workload",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Assigned Tickets",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 30,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Agent Workload — Active Tickets per Agent",
+      "description": "Number of open/in-progress tickets assigned to each active agent.",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.workload",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "username",
+              "jsonPath": "$.workload[*].username"
+            },
+            {
+              "name": "assignedCount",
+              "jsonPath": "$.workload[*].assignedCount",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 104,
+      "title": "SLA Performance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 33
+      },
+      "id": 40,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent",
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Response SLA Status",
+      "description": "Distribution of response SLA compliance.",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.sla.response",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "status",
+              "jsonPath": "$.sla.response[*].status"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.sla.response[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 33
+      },
+      "id": 41,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent",
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Resolution SLA Status",
+      "description": "Distribution of resolution SLA compliance.",
+      "type": "piechart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.sla.resolution",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "status",
+              "jsonPath": "$.sla.resolution[*].status"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.sla.resolution[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 33
+      },
+      "id": 42,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "SLA Compliance Rate",
+      "description": "Percentage of tickets meeting resolution SLA.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.sla.resolutionComplianceRate",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.sla.resolutionComplianceRate",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 105,
+      "title": "Resolution Performance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 72
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 42
+      },
+      "id": 50,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Average Resolution Time",
+      "description": "Mean time from ticket creation to resolution, in hours.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.performance.averageResolutionTime.averageHours",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.performance.averageResolutionTime.averageHours",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 4
+              },
+              {
+                "color": "red",
+                "value": 12
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 42
+      },
+      "id": 51,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Average First Response Time",
+      "description": "Mean time from ticket creation to first agent response, in hours.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.performance.averageFirstResponseTime.averageHours",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.performance.averageFirstResponseTime.averageHours",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 106,
+      "title": "AI Analytics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 49
+      },
+      "id": 60,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "AI Predictions",
+      "description": "Total AI classification predictions in the selected time range.",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.ai.totalPredictions",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.ai.totalPredictions",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "super-light-purple",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 49
+      },
+      "id": 61,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Average AI Confidence",
+      "description": "Mean confidence score of AI predictions (0-1).",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.ai.averageConfidence",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.ai.averageConfidence",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Predictions",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 49
+      },
+      "id": 62,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Top AI Predicted Categories",
+      "description": "Most frequently predicted categories by AI classification.",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "$.ai.topCategories",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/analytics/admin",
+          "queryParams": "",
+          "params": [
+            [
+              "start",
+              "$__isoFrom()"
+            ],
+            [
+              "end",
+              "$__isoTo()"
+            ],
+            [
+              "granularity",
+              "day"
+            ]
+          ],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "name",
+              "jsonPath": "$.ai.topCategories[*].name"
+            },
+            {
+              "name": "count",
+              "jsonPath": "$.ai.topCategories[*].count",
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "nirnaya",
+    "admin",
+    "analytics"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
+  },
+  "timezone": "utc",
+  "refresh": "10s",
+  "title": "NIRNAYA — Admin Analytics",
+  "uid": "nirnaya-admin",
+  "version": 1
+}

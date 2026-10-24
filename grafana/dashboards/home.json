@@ -1,0 +1,319 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Grafana Connectivity",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "status",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/health",
+          "queryParams": "",
+          "params": [],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "NIRNAYA Version",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "version",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/health",
+          "queryParams": "",
+          "params": [],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.version",
+              "language": "jsonata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Datasource Status",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "datasource.status",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/health",
+          "queryParams": "",
+          "params": [],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "result",
+              "jsonPath": "$.datasource.status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "NIRNAYA-Admin"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Authorization",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "NIRNAYA-Admin"
+          },
+          "expression": "authorization.status",
+          "refId": "A",
+          "method": "GET",
+          "urlPath": "/api/grafana/health",
+          "queryParams": "",
+          "params": [],
+          "headers": [],
+          "body": "",
+          "cacheDurationSeconds": 0,
+          "fields": [
+            {
+              "name": "value",
+              "jsonPath": "$.authorization.status",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "nirnaya",
+    "infrastructure"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "NIRNAYA — Infrastructure Health",
+  "uid": "nirnaya-home",
+  "version": 1
+}

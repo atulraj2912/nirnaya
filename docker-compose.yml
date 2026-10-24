@@ -1,0 +1,49 @@
+# NIRNAYA — Grafana + Application stack (local development only)
+#
+# Usage:
+#   docker compose up -d          # start Grafana
+#   docker compose down           # stop Grafana
+#   docker compose logs -f grafana # view Grafana logs
+#
+# NIRNAYA itself runs outside Docker (npm run dev).
+# Grafana connects to NIRNAYA's analytics API via http://host.docker.internal:3000.
+
+services:
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: nirnaya-grafana
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "3100:3000"
+    env_file:
+      - .env
+      - ./grafana/grafana.env
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-nirnaya-dev}"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/home.json
+      GF_AUTH_JWT_ENABLED: "true"
+      GF_AUTH_JWT_HEADER_NAME: "X-Grav-Token"
+      GF_AUTH_JWT_EMAIL_CLAIM: "email"
+      GF_AUTH_JWT_USERNAME_CLAIM: "username"
+      GF_AUTH_JWT_AUTO_SIGN_UP: "true"
+      GF_AUTH_JWT_ORGANIZATION: "Main Org."
+      GF_AUTH_JWT_ORGANIZATION_ROLE: "Viewer"
+      GF_AUTH_JWT_URL_LOGIN: "true"
+      GF_AUTH_JWT_ENABLE_LOGIN_TOKEN: "true"
+      GF_AUTH_JWT_KEY_FILE: "/etc/grafana/jwt-public.pem"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana/entrypoint.sh:/entrypoint.sh:ro
+      - ./grafana/jwt-public.pem:/etc/grafana/jwt-public.pem:ro
+      - grafana-storage:/var/lib/grafana
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  grafana-storage:

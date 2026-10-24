@@ -133,11 +133,13 @@ describe("Part 2: Seed data idempotency (spec §28)", () => {
   });
 
   it("checks for existing comments before creating", () => {
-    expect(seedContent).toContain("comment.count");
+    expect(seedContent).toContain("prisma.comment.findFirst");
+    expect(seedContent).toContain("prisma.comment.create");
   });
 
   it("checks for existing assignment history before creating", () => {
-    expect(seedContent).toContain("ticketAssignmentHistory.count");
+    expect(seedContent).toContain("prisma.ticketAssignmentHistory.findFirst");
+    expect(seedContent).toContain("prisma.ticketAssignmentHistory.create");
   });
 
   it("checks for existing saved replies before creating", () => {
@@ -252,9 +254,10 @@ describe("Part 2: Seed data coverage (spec §29)", () => {
   });
 
   it("creates tickets with different sources", () => {
-    expect(seedContent).toContain('source: "WEB"');
-    expect(seedContent).toContain('source: "EMAIL"');
-    expect(seedContent).toContain('source: "API"');
+    expect(seedContent).toContain(
+      'const sources = ["WEB", "WEB", "WEB", "EMAIL", "API"]'
+    );
+    expect(seedContent).toContain("source: sources[i % sources.length]");
   });
 
   it("creates comments with PUBLIC and INTERNAL visibility", () => {

@@ -30,6 +30,13 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum SkillProficiency {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
 enum TicketPriority {
   LOW
   MEDIUM
@@ -105,6 +112,8 @@ model Organization {
   // Relations
   departments          Department[]
   users                User[]
+  skills               Skill[]
+  agentSkills          AgentSkill[]
   tickets              Ticket[]
   categories           Category[]
   tags                 Tag[]
@@ -151,8 +160,13 @@ model User {
   role           Role       @default(USER)
   status         UserStatus @default(ACTIVE)
   avatarUrl      String?    @db.Text
-  designation    String?
-  organizationId String
+  designation         String?
+  fullName            String?
+  professionalSummary String?    @db.Text
+  joiningDate         DateTime?   @db.Date
+  yearsOfExperience   Int?
+  location            String?
+  organizationId      String
   departmentId   String
   createdById    String?
   updatedById    String?
@@ -179,17 +193,59 @@ model User {
   assignmentHistory     TicketAssignmentHistory[] @relation("AssignmentAssignedTo")
   assignedByHistory     TicketAssignmentHistory[] @relation("AssignmentAssignedBy")
   aiPredictions         AIPrediction[]
+  agentSkills           AgentSkill[]
   createdSavedReplies   SavedReply[]          @relation("SavedReplyCreatedBy")
   updatedSavedReplies   SavedReply[]          @relation("SavedReplyUpdatedBy")
 
   @@unique([organizationId, username])
   @@unique([organizationId, email])
   @@unique([organizationId, employeeId])
+  @@unique([id, organizationId])
   @@index([organizationId])
   @@index([departmentId])
   @@index([role])
   @@index([status])
   @@map("users")
+}
+
+
+model Skill {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?  @db.Text
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agents       AgentSkill[]
+
+  @@unique([organizationId, name])
+  @@unique([id, organizationId])
+  @@index([organizationId])
+  @@map("skills")
+}
+
+model AgentSkill {
+  id                String          @id @default(uuid())
+  userId            String
+  skillId           String
+  organizationId    String
+  proficiency       SkillProficiency @default(INTERMEDIATE)
+  yearsOfExperience Int?
+  isPrimary         Boolean         @default(false)
+  notes             String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent User  @relation(fields: [userId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+  @@map("agent_skills")
 }
 
 model Ticket {

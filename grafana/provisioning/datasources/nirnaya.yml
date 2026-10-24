@@ -1,0 +1,50 @@
+# Grafana datasource provisioning for NIRNAYA analytics.
+#
+# Uses the JSON API datasource plugin (marcusolsson-json-datasource) to
+# query NIRNAYA's authenticated analytics endpoints. The service token
+# is injected via environment variable substitution in the provisioning YAML.
+#
+# This file is read-only (:ro) and tracked in Git.
+# The actual GRAFANA_SERVICE_TOKEN value lives in .env (never committed).
+#
+# NOTES (Part 1 reliability fixes):
+#   - `uid` is pinned so provisioned datasources match the UID referenced by
+#     every dashboard panel. Without it Grafana generates a random UID and
+#     all panels fail with "Data source not found".
+#   - The Authorization header uses Grafana's core custom-header convention:
+#     the header NAME lives in `jsonData.httpHeaderNameN` and the header VALUE
+#     lives in `secureJsonData.httpHeaderValueN`. Grafana's datasource proxy
+#     only forwards headers configured this way. Storing the value in
+#     `jsonData` (or using the plugin-specific `httpHeader1Name` /
+#     `httpHeader1Value` keys) is never forwarded by the proxy, which surfaces
+#     as "Authentication to data source failed" / "Missing Authorization
+#     header". secureJsonData is also encrypted at rest and is never returned
+#     by the datasources API.
+
+apiVersion: 1
+
+datasources:
+  - name: NIRNAYA-Admin
+    uid: NIRNAYA-Admin
+    type: marcusolsson-json-datasource
+    access: proxy
+    url: http://host.docker.internal:3000
+    jsonData:
+      httpMethod: GET
+      httpHeaderName1: Authorization
+    secureJsonData:
+      httpHeaderValue1: "Bearer ${GRAFANA_SERVICE_TOKEN}"
+    isDefault: true
+    editable: false
+
+  - name: NIRNAYA-Agent
+    uid: NIRNAYA-Agent
+    type: marcusolsson-json-datasource
+    access: proxy
+    url: http://host.docker.internal:3000
+    jsonData:
+      httpMethod: GET
+      httpHeaderName1: Authorization
+    secureJsonData:
+      httpHeaderValue1: "Bearer ${GRAFANA_AGENT_SERVICE_TOKEN}"
+    editable: false

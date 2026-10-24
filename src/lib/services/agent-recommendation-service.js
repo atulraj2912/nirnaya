@@ -17,6 +17,70 @@ const WORKLOAD_STATUSES = ["ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPE
 // High-priority statuses for priority-readiness calculation
 const HIGH_PRIORITY_TICKETS = ["HIGH", "CRITICAL"];
 
+const PROFICIENCY_SCORE = {
+  BEGINNER: 0.25,
+  INTERMEDIATE: 0.5,
+  ADVANCED: 0.75,
+  EXPERT: 1,
+};
+
+// Map ticket language to the skills already used by the employee seed data.
+const SKILL_KEYWORDS = {
+  "Windows Endpoint Management": ["windows", "laptop", "desktop", "endpoint", "device", "patch", "boot", "computer"],
+  "Hardware Diagnostics": ["hardware", "printer", "monitor", "keyboard", "mouse", "battery", "screen", "peripheral"],
+  "Microsoft 365": ["microsoft 365", "office 365", "teams", "sharepoint", "excel", "word"],
+  "Identity and Access Management": ["identity", "access", "permission", "mfa", "authentication", "account", "login", "password", "locked"],
+  "Networking": ["network", "wifi", "wi-fi", "dns", "dhcp", "lan", "wan", "connectivity", "internet"],
+  "VPN Troubleshooting": ["vpn", "remote access", "tunnel", "vpn client"],
+  "Linux Administration": ["linux", "ubuntu", "shell", "ssh", "systemd", "server logs"],
+  "Cloud Infrastructure": ["cloud", "infrastructure", "deployment", "instance", "cloud server"],
+  "Cybersecurity Triage": ["security", "phishing", "malware", "suspicious", "breach", "endpoint alert", "incident response"],
+  "SQL and Databases": ["sql", "database", "postgres", "query", "connection pool", "db connection"],
+  "Application Support": ["application", "app error", "internal tool", "web app", "crash", "service error"],
+  "Developer Tooling": ["git", "ide", "pipeline", "build", "ci/cd", "repository", "development environment"],
+  "Email Systems": ["email", "outlook", "mailbox", "mail flow", "calendar sync"],
+  "IT Service Management": ["service request", "ticket", "it support", "onboarding", "incident", "service desk"],
+};
+
+function getRelevantSkillNames(ticket) {
+  const text = [
+    ticket.category?.name,
+    ticket.title,
+    ticket.description,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return Object.entries(SKILL_KEYWORDS)
+    .filter(([, keywords]) => keywords.some((keyword) => text.includes(keyword)))
+    .map(([skillName]) => skillName);
+}
+
+function calculateSkillMatch(agentSkills, relevantSkillNames) {
+  if (!relevantSkillNames.length || !agentSkills?.length) return 0;
+
+  const relevant = agentSkills.filter((entry) =>
+    relevantSkillNames.includes(entry.skill.name)
+  );
+  if (!relevant.length) return 0;
+
+  // Reward demonstrated proficiency and relevant experience without allowing
+  // years alone to outweigh the explicit proficiency level.
+  const scores = relevant.map((entry) => {
+    const proficiency = PROFICIENCY_SCORE[entry.proficiency] ?? 0.5;
+    const experienceBonus = Math.min(0.15, Math.max(0, entry.yearsOfExperience || 0) * 0.02);
+    const primaryBonus = entry.isPrimary ? 0.05 : 0;
+    return Math.min(1, proficiency + experienceBonus + primaryBonus);
+  });
+
+  return Math.max(...scores);
+}
+
+function combineCategoryExperienceWithSkills(categoryHistoryFactor, skillMatch) {
+  // Keep the existing category-experience weight at 30%; skills refine this
+  // factor rather than adding a new weight that would alter the agreed formula.
+  if (skillMatch <= 0) return categoryHistoryFactor;
+  return Math.min(1, categoryHistoryFactor * 0.7 + skillMatch * 0.3);
+}
+
 // Spec §18 weights
 const WEIGHTS = {
   department: 0.30,
@@ -219,6 +283,14 @@ async function findEligibleAgents(organizationId, departmentId) {
       email: true,
       departmentId: true,
       department: { select: { name: true } },
+      agentSkills: {
+        select: {
+          proficiency: true,
+          yearsOfExperience: true,
+          isPrimary: true,
+          skill: { select: { name: true } },
+        },
+      },
     },
     orderBy: { username: "asc" }, // Deterministic ordering
   });
@@ -413,6 +485,10 @@ export async function getRecommendations(ticketId, user) {
     // 5. Fetch workload and experience data using effective category
     const workloadMap = await calculateWorkloads(agentIds);
     const experienceMap = await calculateExperience(agentIds, effectiveCategoryId);
+    const relevantSkillNames = getRelevantSkillNames({
+      ...ticket,
+      category: ticket.category || aiPrediction?.predictedCategory || null,
+    });
 
     // 6. Score each agent
     const scored = agents.map((agent) => {
@@ -420,7 +496,9 @@ export async function getRecommendations(ticketId, user) {
       const experience = experienceMap.get(agent.id) || { categoryResolved: 0, totalResolved: 0 };
 
       const fDept = departmentMatch(agent.departmentId, effectiveDepartmentId);
-      const fCatExp = categoryExperienceFactor(experience.categoryResolved);
+      const categoryHistory = categoryExperienceFactor(experience.categoryResolved);
+      const skillMatch = calculateSkillMatch(agent.agentSkills, relevantSkillNames);
+      const fCatExp = combineCategoryExperienceWithSkills(categoryHistory, skillMatch);
       const fWorkload = workloadFactor(workload.activeTickets);
       const fPriority = priorityReadinessFactor(workload.activeTickets, effectivePriority);
       const fHistExp = historicalExperienceFactor(experience.totalResolved);
@@ -450,6 +528,16 @@ export async function getRecommendations(ticketId, user) {
         experience: {
           categoryResolved: experience.categoryResolved,
           totalResolved: experience.totalResolved,
+          relevantSkills: (agent.agentSkills || [])
+            .filter((entry) => relevantSkillNames.includes(entry.skill.name))
+            .map((entry) => ({
+              name: entry.skill.name,
+              proficiency: entry.proficiency,
+              yearsOfExperience: entry.yearsOfExperience,
+              isPrimary: entry.isPrimary,
+            })),
+
+          skillMatch: Math.round(skillMatch * 100) / 100,
         },
         factors: [
           { name: "Department Match", normalized: fDept, weight: WEIGHTS.department, contribution: Math.round(contribution.department * 100) / 100 },

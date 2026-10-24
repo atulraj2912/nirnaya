@@ -5,6 +5,7 @@ import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import { useAnalytics } from "@/hooks/use-dashboard-queries";
 import { BarChart, HorizontalBarChart } from "@/components/ui/bar-chart";
+import GrafanaEmbed from "@/components/grafana/grafana-embed";
 
 const TIME_OPTIONS = [
   { value: "today", label: "Today" },
@@ -229,6 +230,8 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+
+      <GrafanaEmbed />
     </div>
   );
 }

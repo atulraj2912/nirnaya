@@ -48,3 +48,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# grafana — local secret material. Never commit. The tracked provisioning
+# files reference these values via env-var substitution from .env only.
+/grafana/jwt-secret.txt
+/grafana/custom.ini
+
+# local scratch files (not part of the runtime stack)
+temp-test-entrypoint.sh
+/logs

@@ -1,0 +1,19 @@
+# Grafana dashboard provisioning for NIRNAYA.
+#
+# Loads dashboard JSON files from /var/lib/grafana/dashboards.
+# This file is read-only (:ro) and tracked in Git.
+
+apiVersion: 1
+
+providers:
+  - name: NIRNAYA
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
