@@ -19,6 +19,9 @@ vi.mock("@/lib/db/prisma", () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    sLAConfiguration: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
   },
 }));
 
@@ -77,6 +80,10 @@ describe("AI classification service", () => {
       expect(prediction).not.toBeNull();
       expect(prediction.ticketId).toBe("ticket-1");
       expect(prisma.aIPrediction.create).toHaveBeenCalled();
+      expect(prisma.ticket.update).toHaveBeenCalledWith({
+        where: { id: "ticket-1" },
+        data: { priority: expect.any(String) },
+      });
     });
 
     it("returns error for non-existent ticket", async () => {

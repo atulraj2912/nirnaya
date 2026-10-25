@@ -21,6 +21,7 @@ import {
   notifyTicketStatusChanged,
   notifyTicketReopened,
   createNotification,
+  notifyTicketCreated,
 } from "./notification-service";
 import { emitToTicket } from "@/lib/realtime/socket-server";
 import { getIO } from "@/lib/realtime/socket-instance";
@@ -128,6 +129,15 @@ export async function createTicket(data, user) {
   initializeTicketSLA(ticket.id, orgId, ticket.priority).catch((err) => {
     console.error("SLA initialization failed:", err);
   });
+
+  // Notify active admins in this organization that a new ticket was created.
+  // Notification failure must never block ticket creation.
+  notifyTicketCreated({
+    ticketId: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    requesterId: user.id,
+    organizationId: orgId,
+  }).catch((err) => console.error("Ticket-created notification failed:", err));
 
   // Notify assigned agent if assignment happened during creation
   if (ticket.assignedAgentId) {

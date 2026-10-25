@@ -278,3 +278,56 @@ export async function evaluateAndPersistSLA(ticketId) {
 
   return ticket;
 }
+
+
+/**
+ * Recalculate both SLA deadlines after a ticket priority is changed by
+ * automatic AI classification. This is intended for newly-created tickets
+ * before an agent has responded or the ticket has been resolved.
+ */
+export async function recalculateSLAForPriority(ticketId, priority) {
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  if (!ticket) return null;
+
+  const config = await prisma.sLAConfiguration.findFirst({
+    where: { organizationId: ticket.organizationId, priority },
+  });
+  if (!config) return null;
+
+  const now = new Date();
+  const responseDueAt = new Date(
+    ticket.createdAt.getTime() + config.responseTimeMinutes * 60 * 1000
+  );
+  const resolutionDueAt = new Date(
+    ticket.createdAt.getTime() + config.resolutionTimeMinutes * 60 * 1000
+  );
+
+  const getStatus = (dueAt, originalMinutes, completed, paused) => {
+    if (completed) return "COMPLETED";
+    if (paused) return "PAUSED";
+    const remainingMs = dueAt.getTime() - now.getTime();
+    if (remainingMs < 0) return "BREACHED";
+    if (remainingMs <= originalMinutes * 60 * 1000 * WARNING_THRESHOLD) return "WARNING";
+    return "ON_TRACK";
+  };
+
+  return prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      responseDueAt,
+      resolutionDueAt,
+      responseSlaStatus: getStatus(
+        responseDueAt,
+        config.responseTimeMinutes,
+        Boolean(ticket.firstRespondedAt),
+        Boolean(ticket.waitingSince)
+      ),
+      resolutionSlaStatus: getStatus(
+        resolutionDueAt,
+        config.resolutionTimeMinutes,
+        ticket.status === "RESOLVED" || ticket.status === "CLOSED",
+        Boolean(ticket.waitingSince)
+      ),
+    },
+  });
+}

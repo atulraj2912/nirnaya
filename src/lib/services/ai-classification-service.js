@@ -1,5 +1,6 @@
 import prisma from "@/lib/db/prisma";
 import { classify, getConfiguredProviderName } from "@/lib/ai/classifier";
+import { recalculateSLAForPriority } from "@/lib/services/sla-service";
 
 /**
  * AI Classification Service.
@@ -108,6 +109,21 @@ export async function classifyTicket(ticketId, user) {
         suggestedNextSteps: result.suggestedNextSteps,
       },
     });
+
+    // The automatic classification is the source of truth for the ticket's
+    // final priority. Persist it so the ticket list and detail page agree.
+    if (result.predictedPriority && result.predictedPriority !== ticket.priority) {
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { priority: result.predictedPriority },
+      });
+
+      // Priority affects SLA targets. Recalculate both deadlines without
+      // allowing an SLA configuration issue to erase a successful prediction.
+      await recalculateSLAForPriority(ticketId, result.predictedPriority).catch((err) => {
+        console.error("SLA recalculation after AI classification failed:", err);
+      });
+    }
 
     return { prediction, error: null };
   } catch (err) {
