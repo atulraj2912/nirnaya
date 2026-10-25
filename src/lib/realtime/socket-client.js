@@ -68,44 +68,48 @@ export function unsubscribeFromTicket(ticketId) {
   }
 }
 
+// Capture the socket instance when subscribing. During logout, disconnectSocket()
+// sets the module-level socket to null before React effects necessarily clean up.
+// Cleanup must use the captured instance rather than dereferencing that mutable
+// module-level variable.
+function subscribeToEvent(eventName, callback) {
+  const activeSocket = socket;
+  if (!activeSocket) return () => {};
+
+  activeSocket.on(eventName, callback);
+  let subscribed = true;
+
+  return () => {
+    if (!subscribed) return;
+    subscribed = false;
+    activeSocket.off(eventName, callback);
+  };
+}
+
 export function onNotification(callback) {
-  if (!socket) return () => {};
-  socket.on("notification:new", callback);
-  return () => socket.off("notification:new", callback);
+  return subscribeToEvent("notification:new", callback);
 }
 
 export function onNotificationRead(callback) {
-  if (!socket) return () => {};
-  socket.on("notification:read", callback);
-  return () => socket.off("notification:read", callback);
+  return subscribeToEvent("notification:read", callback);
 }
 
 export function onNotificationReadAll(callback) {
-  if (!socket) return () => {};
-  socket.on("notification:read_all", callback);
-  return () => socket.off("notification:read_all", callback);
+  return subscribeToEvent("notification:read_all", callback);
 }
 
 export function onTicketUpdated(callback) {
-  if (!socket) return () => {};
-  socket.on("ticket:updated", callback);
-  return () => socket.off("ticket:updated", callback);
+  return subscribeToEvent("ticket:updated", callback);
 }
 
 export function onTicketStatusChanged(callback) {
-  if (!socket) return () => {};
-  socket.on("ticket:status-changed", callback);
-  return () => socket.off("ticket:status-changed", callback);
+  return subscribeToEvent("ticket:status-changed", callback);
 }
 
 export function onTicketAssigned(callback) {
-  if (!socket) return () => {};
-  socket.on("ticket:assigned", callback);
-  return () => socket.off("ticket:assigned", callback);
+  return subscribeToEvent("ticket:assigned", callback);
 }
 
 export function onTicketCommentAdded(callback) {
-  if (!socket) return () => {};
-  socket.on("ticket:comment_added", callback);
-  return () => socket.off("ticket:comment_added", callback);
+  return subscribeToEvent("ticket:comment_added", callback);
 }

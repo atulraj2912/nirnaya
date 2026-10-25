@@ -88,6 +88,38 @@ export async function createBulkNotifications(notifications) {
   return results;
 }
 
+
+/**
+ * Notify active admins in the ticket's organization when a new ticket is created.
+ * The creator is excluded so an admin creating a ticket does not notify themselves.
+ */
+export async function notifyTicketCreated({
+  ticketId,
+  ticketNumber,
+  requesterId,
+  organizationId,
+}) {
+  const admins = await prisma.user.findMany({
+    where: {
+      organizationId,
+      role: "ADMIN",
+      status: "ACTIVE",
+      id: { not: requesterId },
+    },
+    select: { id: true },
+  });
+
+  return createBulkNotifications(
+    admins.map((admin) => ({
+      type: "TICKET_CREATED",
+      message: `New ticket ${ticketNumber} was created`,
+      ticketId,
+      recipientId: admin.id,
+      organizationId,
+    }))
+  );
+}
+
 export async function getUserNotifications(userId, organizationId, options = {}) {
   const { page = 1, limit = 20, unreadOnly = false } = options;
 

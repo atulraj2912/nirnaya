@@ -16,6 +16,7 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     user: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -29,6 +30,7 @@ import {
   markAsRead,
   markAllAsRead,
   notifyTicketAssigned,
+  notifyTicketCreated,
   notifyTicketStatusChanged,
   notifySLABreach,
   notifySLAWarning,
@@ -339,6 +341,40 @@ describe("Notification service", () => {
         },
         data: { isRead: true },
       });
+    });
+  });
+
+  describe("notifyTicketCreated", () => {
+    it("notifies active admins in the same organization except the requester", async () => {
+      prisma.user.findMany.mockResolvedValue([{ id: "admin-2" }, { id: "admin-3" }]);
+      prisma.ticket.findUnique.mockResolvedValue({ id: "ticket-1", organizationId: "org-1" });
+      prisma.notification.findFirst.mockResolvedValue(null);
+      prisma.notification.create.mockImplementation(async ({ data }) => ({
+        id: `notif-${data.recipientId}`,
+        ...data,
+        isRead: false,
+        createdAt: new Date(),
+      }));
+
+      const result = await notifyTicketCreated({
+        ticketId: "ticket-1",
+        ticketNumber: "NIR-2026-000001",
+        requesterId: "user-1",
+        organizationId: "org-1",
+      });
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: {
+          organizationId: "org-1",
+          role: "ADMIN",
+          status: "ACTIVE",
+          id: { not: "user-1" },
+        },
+        select: { id: true },
+      });
+      expect(result).toHaveLength(2);
+      expect(prisma.notification.create).toHaveBeenCalledTimes(2);
+      expect(prisma.notification.create.mock.calls[0][0].data.type).toBe("TICKET_CREATED");
     });
   });
 
