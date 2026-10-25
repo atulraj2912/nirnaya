@@ -12,6 +12,10 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     user: {
       findFirst: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    ticket: {
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -45,6 +49,8 @@ function makeDept(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  prisma.user.groupBy.mockResolvedValue([]);
+  prisma.ticket.groupBy.mockResolvedValue([]);
 });
 
 describe("listDepartments", () => {
@@ -55,6 +61,46 @@ describe("listDepartments", () => {
     const result = await listDepartments(orgId);
     expect(result.departments).toHaveLength(1);
     expect(result.total).toBe(1);
+    expect(result.departments[0].stats).toEqual({
+      totalEmployees: 0,
+      activeEmployees: 0,
+      activeAgents: 0,
+      openTickets: 0,
+      inProgressTickets: 0,
+      resolvedTickets: 0,
+      slaBreaches: 0,
+    });
+    expect(prisma.user.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+      where: { organizationId: orgId, departmentId: { in: ["dept-1"] } },
+    }));
+  });
+
+
+
+  it("aggregates department user and ticket statistics without double-counting SLA breaches", async () => {
+    prisma.department.findMany.mockResolvedValue([makeDept()]);
+    prisma.department.count.mockResolvedValue(1);
+    prisma.user.groupBy.mockResolvedValue([
+      { departmentId: "dept-1", role: "USER", status: "ACTIVE", _count: { _all: 4 } },
+      { departmentId: "dept-1", role: "AGENT", status: "ACTIVE", _count: { _all: 2 } },
+      { departmentId: "dept-1", role: "USER", status: "INACTIVE", _count: { _all: 1 } },
+    ]);
+    prisma.ticket.groupBy.mockResolvedValue([
+      { departmentId: "dept-1", status: "OPEN", responseSlaStatus: null, resolutionSlaStatus: null, _count: { _all: 3 } },
+      { departmentId: "dept-1", status: "IN_PROGRESS", responseSlaStatus: "BREACHED", resolutionSlaStatus: "BREACHED", _count: { _all: 2 } },
+      { departmentId: "dept-1", status: "RESOLVED", responseSlaStatus: "COMPLETED", resolutionSlaStatus: "BREACHED", _count: { _all: 1 } },
+    ]);
+
+    const result = await listDepartments(orgId);
+    expect(result.departments[0].stats).toEqual({
+      totalEmployees: 7,
+      activeEmployees: 6,
+      activeAgents: 2,
+      openTickets: 3,
+      inProgressTickets: 2,
+      resolvedTickets: 1,
+      slaBreaches: 3,
+    });
   });
 
   it("filters by search", async () => {

@@ -28,7 +28,7 @@ export async function listDepartments(organizationId, options = {}) {
     prisma.department.findMany({
       where,
       include: {
-        manager: { select: { id: true, username: true } },
+        manager: { select: { id: true, username: true, fullName: true } },
         _count: { select: { users: true, tickets: true } },
       },
       orderBy: { name: "asc" },
@@ -38,8 +38,66 @@ export async function listDepartments(organizationId, options = {}) {
     prisma.department.count({ where }),
   ]);
 
+  // Fetch grouped counts for only the departments on this page. This avoids
+  // one query per department and keeps every aggregate scoped to the org.
+  const departmentIds = departments.map((department) => department.id);
+  const [userGroups, ticketGroups] = departmentIds.length
+    ? await Promise.all([
+        prisma.user.groupBy({
+          by: ["departmentId", "role", "status"],
+          where: { organizationId, departmentId: { in: departmentIds } },
+          _count: { _all: true },
+        }),
+        prisma.ticket.groupBy({
+          by: ["departmentId", "status", "responseSlaStatus", "resolutionSlaStatus"],
+          where: { organizationId, departmentId: { in: departmentIds } },
+          _count: { _all: true },
+        }),
+      ])
+    : [[], []];
+
+  const statsByDepartment = new Map(
+    departmentIds.map((id) => [id, {
+      totalEmployees: 0,
+      activeEmployees: 0,
+      activeAgents: 0,
+      openTickets: 0,
+      inProgressTickets: 0,
+      resolvedTickets: 0,
+      slaBreaches: 0,
+    }])
+  );
+
+  for (const group of userGroups) {
+    const stats = statsByDepartment.get(group.departmentId);
+    if (!stats) continue;
+    const count = group._count._all;
+    stats.totalEmployees += count;
+    if (group.status === "ACTIVE") stats.activeEmployees += count;
+    if (group.status === "ACTIVE" && group.role === "AGENT") stats.activeAgents += count;
+  }
+
+  for (const group of ticketGroups) {
+    const stats = statsByDepartment.get(group.departmentId);
+    if (!stats) continue;
+    const count = group._count._all;
+    if (group.status === "OPEN") stats.openTickets += count;
+    if (group.status === "IN_PROGRESS") stats.inProgressTickets += count;
+    if (group.status === "RESOLVED") stats.resolvedTickets += count;
+    // Grouping by both SLA statuses means each ticket contributes once even
+    // when both response and resolution SLAs are breached.
+    if (group.responseSlaStatus === "BREACHED" || group.resolutionSlaStatus === "BREACHED") {
+      stats.slaBreaches += count;
+    }
+  }
+
+  const departmentsWithStats = departments.map((department) => ({
+    ...department,
+    stats: statsByDepartment.get(department.id),
+  }));
+
   return {
-    departments,
+    departments: departmentsWithStats,
     total,
     page,
     limit,

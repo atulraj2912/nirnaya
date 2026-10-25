@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Card, { CardHeader, CardContent } from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -85,8 +86,12 @@ export default function AdminDepartmentsPage() {
                     <th className="pb-2 pr-4 font-medium text-text-muted">Name</th>
                     <th className="pb-2 pr-4 font-medium text-text-muted">Code</th>
                     <th className="pb-2 pr-4 font-medium text-text-muted">Manager</th>
-                    <th className="pb-2 pr-4 font-medium text-text-muted">Users</th>
-                    <th className="pb-2 pr-4 font-medium text-text-muted">Tickets</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Employees</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Active Agents</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Open</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">In Progress</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">Resolved</th>
+                    <th className="pb-2 pr-4 font-medium text-text-muted">SLA Breaches</th>
                     <th className="pb-2 pr-4 font-medium text-text-muted">Status</th>
                     <th className="pb-2 font-medium text-text-muted">Actions</th>
                   </tr>
@@ -94,11 +99,22 @@ export default function AdminDepartmentsPage() {
                 <tbody>
                   {departments.map((d) => (
                     <tr key={d.id} className="border-b border-border last:border-0">
-                      <td className="py-2 pr-4 font-medium text-text">{d.name}</td>
+                      <td className="py-2 pr-4 font-medium text-text">
+                        <Link
+                          href={`/admin/departments/${d.id}`}
+                          className="text-primary-600 hover:text-primary-700 hover:underline"
+                        >
+                          {d.name}
+                        </Link>
+                      </td>
                       <td className="py-2 pr-4 font-mono text-xs text-text-secondary">{d.code}</td>
-                      <td className="py-2 pr-4 text-text-secondary">{d.manager?.username || "\u2014"}</td>
-                      <td className="py-2 pr-4 text-text-secondary">{d._count?.users || 0}</td>
-                      <td className="py-2 pr-4 text-text-secondary">{d._count?.tickets || 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.manager?.fullName || d.manager?.username || "\u2014"}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.totalEmployees ?? d._count?.users ?? 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.activeAgents ?? 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.openTickets ?? 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.inProgressTickets ?? 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.resolvedTickets ?? 0}</td>
+                      <td className="py-2 pr-4 text-text-secondary">{d.stats?.slaBreaches ?? 0}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           d.isActive ? "bg-success-50 text-success-700 ring-1 ring-inset ring-success-600/10" : "bg-surface-secondary text-text-muted ring-1 ring-inset ring-gray-500/10"
